@@ -36,7 +36,7 @@
     }
 
     class EVENT {
-        creator: IP_ADDRESS,
+        secret: STRING,
         title: STRING,
         city: STRING,
         date: STRING(dd/mm/yyyy),
@@ -57,13 +57,13 @@
 
             if it does NOT and the method is POST:
                 add it to the Events Dictionary.
-            else if method == PUT and it IP matches creator:
+            else if method == PUT and the correct SECRET:
                 edit the event in place
             else:
                 reject and return error
 
             - IMPORTANT!!
-                make sure to capture the IP address of the person creating the event.
+                make sure to record SECRET for event.
                 We will use that to allow people to edit the event, and add scores/teams/etc.
 
 
@@ -74,7 +74,7 @@
             parse json encoded TEAM STRUCT from body and insert into EVENT->TEAMS DICT
                 again check if it exists first and if it does send back and error indicating that
 
-            MAKE SURE TO CHECK IP AGAINST EVENT CREATOR
+            MAKE SURE TO CHECK SECRET AGAINST EVENT CREATOR
 
 
 
@@ -84,7 +84,7 @@
             This time you need to insert and shift the LIST to maintain order
             Also "division" field will come with name, so just set those( team, name, division )
 
-            MAKE SURE TO CHECK IP AGAINST EVENT CREATOR
+            MAKE SURE TO CHECK SECRET AGAINST EVENT CREATOR
 
 
 
@@ -95,5 +95,5 @@
                 from there go to leaderboard and see if they made it.
                 if they did insert it and potentially bump others.
 
-            MAKE SURE TO CHECK IP AGAINST EVENT CREATOR
+            MAKE SURE TO CHECK SECRET AGAINST EVENT CREATOR
 
