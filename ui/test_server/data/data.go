@@ -3,16 +3,26 @@ package data
 import (
 	"math/rand"
 	"sync"
+	crypt_rand "crypto/rand" 
+	"encoding/base64"
 )
 
 type State struct {
-	Events map[string]Event
+	Events []Event
 	Mux    *sync.RWMutex
+}
+func (state *State) Event_exists(title string) *Event {
+	for _, event := range state.Events {
+		if event.Title == title {
+			return &event;
+		}
+	}
+	return nil;
 }
 
 type Member struct {
 	Name     string `json:"name"`
-	Division string `json:"division"`
+	Division int    `json:"division"`
 	Score    int    `json:"score"`
 	XCount   int    `json:"x_count"`
 }
@@ -26,6 +36,7 @@ type Team struct {
 
 type Event struct {
 	Title     string          `json:"title"`
+	IsOwn	  bool			  `json:"is_own"`
 	Leaders   map[string]int  `json:"leaders"`
 	Divisions []string        `json:"divisions"`
 	Teams     map[string]Team `json:"teams"`
@@ -34,8 +45,21 @@ type Event struct {
 
 // assumed to exist elsewhere
 var DIVISIONS = []string{"OPEN", "MODERN", "OLYMPIC", "TRADITIONAL"}
-func randDivision() string {
-	return DIVISIONS[rand.Intn(len(DIVISIONS))]
+func randDivision() int {
+	return rand.Intn(len(DIVISIONS));
+}
+
+
+func Random_secret() (string, error) {
+	rnd_secret := make([]byte, 8);
+	n, err := crypt_rand.Read(rnd_secret);
+	if n < 8 || err != nil { return "", err }
+	return base64.RawURLEncoding.EncodeToString(rnd_secret), nil
+}
+
+func rand_secret_ignored() string {
+	sec, _ := Random_secret();
+	return sec;
 }
 
 var Events = []Event{
@@ -43,6 +67,7 @@ var Events = []Event{
 		Title:     "Thurston vs Jesuit",
 		Leaders:   map[string]int{},
 		Divisions: DIVISIONS,
+		Secret: rand_secret_ignored(),
 		Teams: map[string]Team{
 			"Thurston": {
 				Name:   "Thurston",
@@ -76,6 +101,7 @@ var Events = []Event{
 		Title:     "Oregon Outdoor State Championship",
 		Leaders:   map[string]int{},
 		Divisions: DIVISIONS,
+		Secret: rand_secret_ignored(),
 		Teams: map[string]Team{
 			"Central Catholic": {
 				Name:   "Central Catholic",
@@ -123,6 +149,7 @@ var Events = []Event{
 		Title:     "OHSAL Public Open",
 		Leaders:   map[string]int{},
 		Divisions: DIVISIONS,
+		Secret: rand_secret_ignored(),
 		Teams: map[string]Team{
 			"Springfield": {
 				Name:   "Springfield",
@@ -180,6 +207,7 @@ var Events = []Event{
 		Title:     "4A State Qualifiers",
 		Leaders:   map[string]int{},
 		Divisions: DIVISIONS,
+		Secret: rand_secret_ignored(),
 		Teams: map[string]Team{
 			"Roseburg": {
 				Name:   "Roseburg",

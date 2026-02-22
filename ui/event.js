@@ -1,5 +1,5 @@
-import { DIVISIONS } from "./data.js";
-import { render } from "./index.js";
+import { delete_event, post_event } from "./api.js";
+import { render } from "./initial.js";
 import { create_elem, random_uint32 } from "./utils.js";
 
 /**
@@ -29,13 +29,16 @@ const MASCOT_NAMES = [
 ];
 
 export class Event {
-    constructor(title, teams=[], divisions=[]) {
+    constructor(title="", teams=[], divisions=[]) {
         /** @type {string} */
-        this.title = title ?? "";
+        this.title = title;
+
+        /** @type {boolean} */
+        this.is_own = false;
 
         /** @type {string[]} */
         this.divisions = divisions;
-        if (divisions.length == 0) this.divisions = DIVISIONS;
+        if (divisions.length == 0) this.divisions = ["N/A"];
 
         /** @type {Map<string, Team>} */
         this.teams = new Map(teams);
@@ -124,28 +127,35 @@ function submit_team(event, team, board_id) {
     if (!team.name) {
         team.name = MASCOT_NAMES[random_uint32() % 20];
     }
-    let board = document.getElementById(board_id);
-    let parent = board.parentNode;
 
-    team.members = team.members.filter((member) => !!member.name);
-
-    parent.insertBefore(render_teamboard(event, team, false), board);
-    parent.removeChild(board);
+    team.members = team.members.filter(
+        (member) => !!member.name
+    );
 
     if (!event.teams[team.name]) {
         event.teams[team.name] = team;
     }
 
-    let leader_grid = document.getElementsByClassName("leaderboard_grid")[0];
-    leader_grid.innerHTML = "";
-    calculate_leaders(event);
-    render_leaderboard(leader_grid, event);
+    post_event(event).then((ev) => {
+        event = ev;
+        event.is_own = true;
+        let board = document.getElementById(board_id);
+        let parent = board.parentNode;
+
+        parent.insertBefore(render_teamboard(event, team, false), board);
+        parent.removeChild(board);
+
+        let leader_grid = document.getElementsByClassName("leaderboard_grid")[0];
+        leader_grid.innerHTML = "";
+        calculate_leaders(event);
+        render_leaderboard(leader_grid, event);
+    }).catch(e => console.error(e));
 }
 
 /**
  * @param {Event} event
  * @param {Team | null} team
- * @param {boolean} is_maluable
+ * @param {Boolean} is_maluable
  * @returns {HTMLElement}
  */
 function render_teamboard(event, team, is_maluable = false) {
@@ -184,18 +194,21 @@ function render_teamboard(event, team, is_maluable = false) {
     }
     team_header.appendChild(team_name_div);
 
-    let spacer = document.createElement("img");
-    team_header.insertBefore(spacer, team_name_div);
+    team_header.insertBefore(document.createElement("img"), team_name_div);
 
-    let edit_team_btn = create_elem("img", team_header, "team_action_btn");
-    edit_team_btn.src = "icons/edit.svg";
-    edit_team_btn.addEventListener("click", () => {
-        let board = document.getElementById(teamboard.id);
-        let parent = board.parentNode;
+    if (event.is_own) {
+        let edit_team_btn = create_elem("img", team_header, "team_action_btn");
+        edit_team_btn.src = "icons/edit.svg";
+        edit_team_btn.addEventListener("click", () => {
+            let board = document.getElementById(teamboard.id);
+            let parent = board.parentNode;
 
-        parent.insertBefore(render_teamboard(event, team, true), board);
-        parent.removeChild(board);
-    });
+            parent.insertBefore(render_teamboard(event, team, true), board);
+            parent.removeChild(board);
+        });
+    } else {
+    team_header.appendChild(document.createElement("img"));
+    }
 
     team.members.forEach(part => {
         let entry = create_elem("div", teamboard, 
@@ -521,6 +534,8 @@ export function render_event(events, idx, main = null, is_maluable = false) {
 
     if (!is_maluable && is_new) is_maluable = true;
 
+    if (is_maluable && !is_new && !event.is_own) is_maluable = false;
+
     if (!main) main = document.getElementById("main");
 
     let scrollable = create_elem("div", main, "event_feed_scrollable");
@@ -533,6 +548,7 @@ export function render_event(events, idx, main = null, is_maluable = false) {
     let title = create_elem((is_maluable) ? "input" : "h1", 
         title_container, "roboto-mono-norm", "title"
     );
+    title.textContent = event.title;
 
     if (is_maluable) {
         if (!is_new) title.value = event.title;
@@ -544,34 +560,42 @@ export function render_event(events, idx, main = null, is_maluable = false) {
         title.addEventListener("keydown", (e) => {
             if (e.key == "Enter") {
                 if (!!event.title) {
-                    main.innerHTML = "";
-                    render(events);
-                    render_event(events, idx, main);
+                    post_event(event).then((ev) => {
+                        events[idx] = ev;
+                        main.innerHTML = "";
+                        render(events);
+                        render_event(events, idx, main);
+                    }).catch(e => console.error(e));
                 } else {
                     requestAnimationFrame(() => title.focus());
                 }
             }
         })
 
-        let remove_team_btn = create_elem("img", null, "team_action_btn");
-        remove_team_btn.src = "icons/garbage.svg";
-        remove_team_btn.addEventListener("click", () => {
-            main.innerHTML = "";
-            events.splice(idx, 1);
-            if (events.length > 0)
-                render_event(events, events.length - 1, main);
-
-            render(events);
+        let remove_event_btn = create_elem("img", null, "team_action_btn");
+        remove_event_btn.src = "icons/garbage.svg";
+        remove_event_btn.addEventListener("click", () => {
+            delete_event(event.title).then(() => {
+                main.innerHTML = "";
+                events.splice(idx, 1);
+                if (events.length > 0)
+                    render_event(events, events.length - 1, main);
+                render(events);
+            });
         });
-        title_container.insertBefore(remove_team_btn, title);
+        title_container.insertBefore(remove_event_btn, title);
 
         let submit_team_btn = create_elem("img", title_container, "team_action_btn");
         submit_team_btn.src = "icons/submit.svg";
         submit_team_btn.addEventListener("click", () => {
             if (!!event.title) {
-                main.innerHTML = "";
-                render(events);
-                render_event(events, idx, main);
+                post_event(event).then((ev) => {
+                    events[idx] = ev;
+                    main.innerHTML = "";
+                    render(events);
+                    render_event(events, idx, main);
+                }).catch(e => console.error(e));
+
             } else {
                 requestAnimationFrame(() => title.focus());
             }
@@ -582,9 +606,8 @@ export function render_event(events, idx, main = null, is_maluable = false) {
             // DIVISIONS?
         }
 
-    } else {
+    } else if (event.is_own) {
         title_container.insertBefore(document.createElement("div"), title);
-        title.textContent = event.title;
 
         let edit_btn = create_elem("img", title_container, "team_action_btn");
         edit_btn.src = "icons/edit.svg";
@@ -592,6 +615,9 @@ export function render_event(events, idx, main = null, is_maluable = false) {
             main.removeChild(scrollable);
             render_event(events, idx, main, true);
         });
+    } else {
+        title_container.insertBefore(document.createElement("div"), title);
+        title_container.appendChild(document.createElement("div"));
     }
 
     let leader_container = create_elem("div", container, "leaderboard_grid");
@@ -605,7 +631,7 @@ export function render_event(events, idx, main = null, is_maluable = false) {
         team_boards.appendChild(render_teamboard(event, team))
     );
 
-    if (!is_new) {
+    if (!is_new && event.is_own) {
         let add_cont = create_elem(
             "div", team_boards, 
             "team_scoreboard", "add_team_container"
