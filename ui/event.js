@@ -48,6 +48,7 @@ export class Event {
         if (teams.length > 0) this.calculate_leaders();
     }
 
+
 }
 
 /** @param {Event} event */
@@ -93,6 +94,7 @@ function team_input_field(
     element.addEventListener("input", (e) => {
         input_callback(e.target.value);
     });
+
     element.addEventListener("keydown", (e) => {
         let board = document.getElementById(teamboard_id);
         if (e.shiftKey && e.key == "Enter"){
@@ -132,13 +134,10 @@ function submit_team(event, team, board_id) {
         (member) => !!member.name
     );
 
-    if (!event.teams[team.name]) {
-        event.teams[team.name] = team;
-    }
+    event.teams[team.name] = team;
 
     post_event(event).then((ev) => {
         event = ev;
-        event.is_own = true;
         let board = document.getElementById(board_id);
         let parent = board.parentNode;
 
@@ -285,14 +284,18 @@ function render_teamboard_mut(event, team, team_existed) {
     remove_team_btn.src = "icons/garbage.svg";
     remove_team_btn.classList.add("team_action_btn", "left");
     remove_team_btn.addEventListener("click", () => {
-        let board = document.getElementById(teamboard.id);
-        board.parentNode.removeChild(board);
         delete event.teams[team.name];
+        post_event(event).then((ev) => {
+            event = ev;
+            let board = document.getElementById(teamboard.id);
+            board.parentNode.removeChild(board);
+            delete event.teams[team.name];
 
-        let leader_grid = document.getElementsByClassName("leaderboard_grid")[0];
-        leader_grid.innerHTML = "";
-        calculate_leaders(event);
-        render_leaderboard(leader_grid, event);
+            let leader_grid = document.getElementsByClassName("leaderboard_grid")[0];
+            leader_grid.innerHTML = "";
+            calculate_leaders(event);
+            render_leaderboard(leader_grid, event);
+        }).catch(e => console.error(e));
     });
     team_header.insertBefore(remove_team_btn, team_name_div);
 

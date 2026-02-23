@@ -9,6 +9,7 @@ import (
 	"log"
 	"math/big"
 	"net/http"
+	"os"
 	"server/data"
 	"slices"
 	"sync"
@@ -58,6 +59,7 @@ func handle_events(state *data.State, w http.ResponseWriter, r *http.Request) {
 			return;
 		}
 		w.Write(bytes);
+		return;
 	}
 	case "POST", "PUT": {
 
@@ -71,14 +73,13 @@ func handle_events(state *data.State, w http.ResponseWriter, r *http.Request) {
 		state.Mux.Lock();
 		defer state.Mux.Unlock();
 
-
 		existing := state.Event_exists(event.Title);
 		if existing != nil {
 			if existing.Secret != cookie.Value {
-				log.Panicln(existing.Secret, event.Secret);
 				http.Error(w, "INVALID SECRET", http.StatusUnauthorized);
 				return
 			}
+			event.Secret = cookie.Value;
 			*existing = event;
 
 			w.Header().Set("Content-Type", "application/json")
@@ -160,15 +161,20 @@ func main() {
 		Mux: &sync.RWMutex{},
 	};
 
+	dst, ok := os.LookupEnv("dst_dir");
+	if !ok {
+		dst = "../";
+	}
+
 	mux := http.NewServeMux();
-	mux.Handle("/", http.FileServer(http.Dir("../")));
+	mux.Handle("/", http.FileServer(http.Dir(dst)));
 
 	mux.HandleFunc("/events", func (w http.ResponseWriter, r *http.Request) {
 		handle_events(&state, w, r);
 	})
 
 	server := &http.Server{
-		Addr: "127.0.0.1:8080",
+		Addr: "0.0.0.0:8080",
 		Handler: mux,
 		TLSConfig: generateTLSConfig(),
 	};

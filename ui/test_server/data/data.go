@@ -29,12 +29,12 @@ type State struct {
 }
 
 func (state *State) Event_exists(title string) *Event {
-	for _, event := range state.Events {
-		if event.Title == title {
-			return &event;
+	for i := range state.Events {
+		if state.Events[i].Title == title {
+			return &state.Events[i]
 		}
 	}
-	return nil;
+	return nil
 }
 
 type Member struct {
