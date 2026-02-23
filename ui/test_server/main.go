@@ -1,18 +1,19 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"log"
+	"math/big"
 	"net/http"
 	"server/data"
 	"slices"
 	"sync"
 	"time"
 )
-
-type PostRes struct {
-	Secret string `json:"secret"`
-};
 
 func handle_events(state *data.State, w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query();
@@ -134,6 +135,24 @@ func handle_events(state *data.State, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func generateTLSConfig() *tls.Config {
+    key, _ := rsa.GenerateKey(rand.Reader, 2048)
+    tmpl := &x509.Certificate{
+        SerialNumber: big.NewInt(1),
+        NotBefore:    time.Now(),
+        NotAfter:     time.Now().Add(365 * 24 * time.Hour),
+        KeyUsage:     x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+        ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+        DNSNames:     []string{"localhost"},
+    }
+    certDER, _ := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &key.PublicKey, key)
+    cert := tls.Certificate{
+        Certificate: [][]byte{certDER},
+        PrivateKey:  key,
+    }
+    return &tls.Config{Certificates: []tls.Certificate{cert}}
+}
+
 
 func main() {
 	state := data.State{
@@ -148,19 +167,14 @@ func main() {
 		handle_events(&state, w, r);
 	})
 
-	mux.HandleFunc("/divisions", func (w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		bytes, err := json.Marshal(data.DIVISIONS)
-		if err != nil {
-			http.Error(w, "EVENT MARSHAL FAILED", http.StatusInternalServerError);
-			return;
-		}
-		w.Write(bytes);
-	});
-
+	server := &http.Server{
+		Addr: "127.0.0.1:8080",
+		Handler: mux,
+		TLSConfig: generateTLSConfig(),
+	};
 
 	log.Println("Started server!");
-	if err := http.ListenAndServe("127.0.0.1:8080", mux); err != nil {
+	if err := server.ListenAndServe(); err != nil {
 		log.Fatal(err);
 	}
 }

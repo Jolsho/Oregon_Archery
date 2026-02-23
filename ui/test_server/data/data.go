@@ -1,16 +1,33 @@
 package data
 
 import (
+	crypt_rand "crypto/rand"
+	"encoding/base64"
 	"math/rand"
 	"sync"
-	crypt_rand "crypto/rand" 
-	"encoding/base64"
+
+	"github.com/gorilla/websocket"
 )
 
 type State struct {
 	Events []Event
 	Mux    *sync.RWMutex
+
+	/* 
+		TODO --> 
+			implement Rate Limiting based on IP? just for creating events... 
+			AND have another rate for event updating
+			maybe limit event size and count as well?
+	*/
+	Rates	map[string]int
+
+
+	/* 
+		TODO --> IMPLEMENT LIVE UPDATES 
+	*/
+	Conns	map[string]*websocket.Conn
 }
+
 func (state *State) Event_exists(title string) *Event {
 	for _, event := range state.Events {
 		if event.Title == title {
