@@ -2,10 +2,24 @@ package internals
 
 import "math/rand"
 
-// assumed to exist elsewhere
-var DIVISIONS = []string{"OPEN", "MODERN", "OLYMPIC", "TRADITIONAL"}
+var kinds = []string{"INDOOR", "OUTDOOR"}
+
+var DIVISIONS = []Division{
+	{ Name: "OPEN", 		Threshold: 280, }, 
+	{ Name: "MODERN", 		Threshold: 265, }, 
+
+	// TODO --> NOT REAL OLYMPIC THRESHOLD
+	// ASK CHRIS FOR THIS
+	{ Name: "OLYMPIC", 		Threshold: 260, },  
+
+	{ Name: "TRADITIONAL", 	Threshold: 185, }, 
+}
+
 func randDivision() int {
 	return rand.Intn(len(DIVISIONS));
+}
+func randKind() string {
+	return kinds[rand.Intn(len(kinds))];
 }
 
 var Events = []Event{
@@ -13,6 +27,7 @@ var Events = []Event{
 		Title:     "Thurston vs Jesuit",
 		Leaders:   map[string]int{},
 		Divisions: DIVISIONS,
+		Kind: "INDOOR",
 		Secret: Rand_8_str_ignored(),
 		Teams: map[string]Team{
 			"Thurston": {
@@ -47,6 +62,7 @@ var Events = []Event{
 		Title:     "Oregon Outdoor State Championship",
 		Leaders:   map[string]int{},
 		Divisions: DIVISIONS,
+		Kind: "INDOOR",
 		Secret: Rand_8_str_ignored(),
 		Teams: map[string]Team{
 			"Central Catholic": {
@@ -95,6 +111,8 @@ var Events = []Event{
 		Title:     "OHSAL Public Open",
 		Leaders:   map[string]int{},
 		Divisions: DIVISIONS,
+		Kind: "OUTDOOR",
+		ScoresPerTeam: 3,
 		Secret: Rand_8_str_ignored(),
 		Teams: map[string]Team{
 			"Springfield": {
@@ -153,6 +171,8 @@ var Events = []Event{
 		Title:     "4A State Qualifiers",
 		Leaders:   map[string]int{},
 		Divisions: DIVISIONS,
+		Kind: "OUTDOOR",
+		ScoresPerTeam: 3,
 		Secret: Rand_8_str_ignored(),
 		Teams: map[string]Team{
 			"Roseburg": {

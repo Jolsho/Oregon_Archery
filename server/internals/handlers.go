@@ -35,7 +35,8 @@ func Handle_events(state *State, cookie *http.Cookie, w http.ResponseWriter, r *
 
 	case "POST", "PUT": {
 
-		var event Event
+		event := DefaultEvent();
+		event.Kind = "OUTDOOR";
 		err := json.NewDecoder(r.Body).Decode(&event)
 		if err != nil {
 			http.Error(w, "invalid JSON body", http.StatusBadRequest)
@@ -54,6 +55,12 @@ func Handle_events(state *State, cookie *http.Cookie, w http.ResponseWriter, r *
 			event.Secret = nonce;
 			*existing = event;
 
+			err := existing.Sanitize();
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest);
+				return;
+			}
+
 			w.Header().Set("Content-Type", "application/json")
 			bytes, err := json.Marshal(event)
 			if err != nil {
@@ -65,9 +72,14 @@ func Handle_events(state *State, cookie *http.Cookie, w http.ResponseWriter, r *
 
 		} else {
 
-			event.Divisions = DIVISIONS;
 			event.Secret = nonce;
 			event.IsOwn = true;
+
+			err := event.Sanitize();
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest);
+				return;
+			}
 
 			w.Header().Set("Content-Type", "application/json")
 			bytes, err := json.Marshal(event)

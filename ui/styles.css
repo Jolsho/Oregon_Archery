@@ -174,6 +174,7 @@ body {
     flex-direction: column;
     align-items: center;
     .title_container {
+        position: relative;
         display: grid;
         grid-template-columns: 40px 1fr 40px;
         align-items: center;
@@ -184,6 +185,49 @@ body {
             font-size: xx-large;
             text-align: center;
         }
+        .error {
+            font-size: small;
+            color: red;
+
+            position: absolute;
+            bottom: 100%;
+            left: 20px;
+        }
+    }
+}
+
+.edit_event_panel {
+    position: absolute;
+    align-self: center;
+    justify-self: center;
+
+    width: 75%;
+    height: fit-content;
+    top: 110%;
+    z-index: 100;
+
+    background-color: var(--input-color);
+    border: solid 1px black;
+
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    gap: 10px;
+
+    .kind_container {
+        height: fit-content;
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .scores_per_team {
+        margin-left: 10px;
+        height: 25px;
+        width: 60px;
+        font-size: small;
+        align-self: center;
     }
 }
 

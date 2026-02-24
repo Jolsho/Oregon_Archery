@@ -2,7 +2,9 @@ package internals
 
 import (
 	"crypto/ecdsa"
+	"errors"
 	"log"
+	"slices"
 	"sync"
 	"time"
 
@@ -14,9 +16,9 @@ type State struct {
 	Mux    *sync.RWMutex
 
 	TimeOut					map[string]time.Time // IP -> timeout_expires
-	BehaviourTracker 		map[string]*Rate 	// IP -> bad_behaviour_rate
-	SessionCreationRates	map[string]*Rate	// IP -> rate
-	DataRates 				map[string]*Rate 	// Session Cookie -> rate
+	BehaviourTracker 		map[string]*Rate 	 // IP -> bad_behaviour_rate
+	SessionCreationRates	map[string]*Rate	 // IP -> rate
+	DataRates 				map[string]*Rate 	 // Session Cookie -> rate
 
 	Conns	map[string]*websocket.Conn
 	Upgrader *websocket.Upgrader
@@ -76,12 +78,41 @@ type Team struct {
 	Members []Member `json:"members"`
 }
 
+type Division struct {
+	Name    string  `json:"name"`
+	Threshold int  	`json:"threshold"`
+}
+
 type Event struct {
 	Title     string          `json:"title"`
 	IsOwn	  bool			  `json:"is_own"`
 	Leaders   map[string]int  `json:"leaders"`
-	Divisions []string        `json:"divisions"`
+	Divisions []Division      `json:"divisions"`
 	Teams     map[string]Team `json:"teams"`
-	Secret 	  string 		   `json:"-"`
+	Kind      string          `json:"kind"`
+	Secret 	  string 		  `json:"-"`
+	ScoresPerTeam int         `json:"scores_per_team"`
+}
+
+func DefaultEvent() Event {
+	return Event{
+		Divisions: DIVISIONS,
+		Kind: "OUTDOOR",
+	};
+}
+
+func (ev *Event) Sanitize() error {
+	if (ev.Title == "") {
+		return errors.New("NO TITLE");
+	}
+
+	ev.Divisions = DIVISIONS;
+
+	if (!slices.Contains(kinds, ev.Kind)) {
+		return errors.New("INVALID KIND");
+	}
+
+
+	return nil;
 }
 
