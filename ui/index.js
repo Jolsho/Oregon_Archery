@@ -1,4 +1,4 @@
-import { get_events } from "./api.js";
+import { get_events, run_websocket } from "./api.js";
 import {Event, render_event} from "./event.js"
 import { render } from "./initial.js";
 
@@ -9,4 +9,6 @@ get_events().then((es) => {
     events = es
     render(events);
     render_event(events, 0);
+    run_websocket(events);
 });
+

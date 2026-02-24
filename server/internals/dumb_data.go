@@ -1,64 +1,6 @@
-package data
+package internals
 
-import (
-	crypt_rand "crypto/rand"
-	"encoding/base64"
-	"math/rand"
-	"sync"
-
-	"github.com/gorilla/websocket"
-)
-
-type State struct {
-	Events []Event
-	Mux    *sync.RWMutex
-
-	/* 
-		TODO --> 
-			implement Rate Limiting based on IP? just for creating events... 
-			AND have another rate for event updating
-			maybe limit event size and count as well?
-	*/
-	Rates	map[string]int
-
-
-	/* 
-		TODO --> IMPLEMENT LIVE UPDATES 
-	*/
-	Conns	map[string]*websocket.Conn
-}
-
-func (state *State) Event_exists(title string) *Event {
-	for i := range state.Events {
-		if state.Events[i].Title == title {
-			return &state.Events[i]
-		}
-	}
-	return nil
-}
-
-type Member struct {
-	Name     string `json:"name"`
-	Division int    `json:"division"`
-	Score    int    `json:"score"`
-	XCount   int    `json:"x_count"`
-}
-
-type Team struct {
-	Name    string   `json:"name"`
-	Score   int      `json:"score"`
-	XCount  int      `json:"x_count"`
-	Members []Member `json:"members"`
-}
-
-type Event struct {
-	Title     string          `json:"title"`
-	IsOwn	  bool			  `json:"is_own"`
-	Leaders   map[string]int  `json:"leaders"`
-	Divisions []string        `json:"divisions"`
-	Teams     map[string]Team `json:"teams"`
-	Secret 	  string 		   `json:"-"`
-}
+import "math/rand"
 
 // assumed to exist elsewhere
 var DIVISIONS = []string{"OPEN", "MODERN", "OLYMPIC", "TRADITIONAL"}
@@ -66,25 +8,12 @@ func randDivision() int {
 	return rand.Intn(len(DIVISIONS));
 }
 
-
-func Random_secret() (string, error) {
-	rnd_secret := make([]byte, 8);
-	n, err := crypt_rand.Read(rnd_secret);
-	if n < 8 || err != nil { return "", err }
-	return base64.RawURLEncoding.EncodeToString(rnd_secret), nil
-}
-
-func rand_secret_ignored() string {
-	sec, _ := Random_secret();
-	return sec;
-}
-
 var Events = []Event{
 	{
 		Title:     "Thurston vs Jesuit",
 		Leaders:   map[string]int{},
 		Divisions: DIVISIONS,
-		Secret: rand_secret_ignored(),
+		Secret: Rand_8_str_ignored(),
 		Teams: map[string]Team{
 			"Thurston": {
 				Name:   "Thurston",
@@ -118,7 +47,7 @@ var Events = []Event{
 		Title:     "Oregon Outdoor State Championship",
 		Leaders:   map[string]int{},
 		Divisions: DIVISIONS,
-		Secret: rand_secret_ignored(),
+		Secret: Rand_8_str_ignored(),
 		Teams: map[string]Team{
 			"Central Catholic": {
 				Name:   "Central Catholic",
@@ -166,7 +95,7 @@ var Events = []Event{
 		Title:     "OHSAL Public Open",
 		Leaders:   map[string]int{},
 		Divisions: DIVISIONS,
-		Secret: rand_secret_ignored(),
+		Secret: Rand_8_str_ignored(),
 		Teams: map[string]Team{
 			"Springfield": {
 				Name:   "Springfield",
@@ -224,7 +153,7 @@ var Events = []Event{
 		Title:     "4A State Qualifiers",
 		Leaders:   map[string]int{},
 		Divisions: DIVISIONS,
-		Secret: rand_secret_ignored(),
+		Secret: Rand_8_str_ignored(),
 		Teams: map[string]Team{
 			"Roseburg": {
 				Name:   "Roseburg",

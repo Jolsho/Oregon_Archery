@@ -1,6 +1,31 @@
 import { Event } from "./event.js";
 
 /**
+ * @param {Event[]} events 
+ *  @returns {Promise<void>}
+ */
+export async function run_websocket(events) {
+    let ws = new WebSocket("/ws");
+
+    ws.onopen = (event) => {
+        console.log("WebSocket connected");
+    };
+
+    ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        events.onMessage?.(data);
+    };
+
+    ws.onerror = (error) => {
+        console.error("WebSocket error:", error);
+    };
+
+    ws.onclose = () => {
+        console.log("WebSocket closed");
+    };
+}
+
+/**
  *  @returns {Promise<Event[]>}
  */
 export async function get_events() {

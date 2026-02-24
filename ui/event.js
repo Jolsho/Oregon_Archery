@@ -563,12 +563,15 @@ export function render_event(events, idx, main = null, is_maluable = false) {
         title.addEventListener("keydown", (e) => {
             if (e.key == "Enter") {
                 if (!!event.title) {
-                    post_event(event).then((ev) => {
-                        events[idx] = ev;
-                        main.innerHTML = "";
-                        render(events);
-                        render_event(events, idx, main);
-                    }).catch(e => console.error(e));
+                    let existing_idx = events.findIndex(v => v.title == event.title);
+                    if (existing_idx == -1) {
+                        post_event(event).then((ev) => {
+                            events[idx] = ev;
+                            main.innerHTML = "";
+                            render(events);
+                            render_event(events, idx, main);
+                        }).catch(e => console.error(e));
+                    }
                 } else {
                     requestAnimationFrame(() => title.focus());
                 }
@@ -592,14 +595,22 @@ export function render_event(events, idx, main = null, is_maluable = false) {
         submit_team_btn.src = "icons/submit.svg";
         submit_team_btn.addEventListener("click", () => {
             if (!!event.title) {
-                post_event(event).then((ev) => {
-                    events[idx] = ev;
-                    main.innerHTML = "";
-                    render(events);
-                    render_event(events, idx, main);
-                }).catch(e => console.error(e));
+                let existing_idx = events.findIndex(v => v.title == event.title);
+                if (existing_idx == -1) {
+                    post_event(event).then((ev) => {
+                        events[idx] = ev;
+                        main.innerHTML = "";
+                        render(events);
+                        render_event(events, idx, main);
+                    }).catch(e => console.error(e));
+                    return;
+                }
+
+                // TODO -- show error?
 
             } else {
+
+                // TODO -- show error?
                 requestAnimationFrame(() => title.focus());
             }
         });
