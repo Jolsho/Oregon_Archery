@@ -3,6 +3,7 @@ package internals
 import (
 	"errors"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -47,7 +48,7 @@ func (state *State)handle_rates(
 	var threshold, points int;
 	var lifespan time.Duration;
 	var ban_time time.Duration;
-
+	var mux *sync.RWMutex;
 
 	switch rate {
 
@@ -57,7 +58,7 @@ func (state *State)handle_rates(
 		points = 1;
 		lifespan = RATE_LIFESPAN;
 		ban_time = RATE_TIMEOUT;
-
+		mux = state.SessionRateMux;
 	}
 		
 	case RATE_DATA: {
@@ -66,6 +67,7 @@ func (state *State)handle_rates(
 		points = 1;
 		lifespan = RATE_LIFESPAN;
 		ban_time = RATE_TIMEOUT;
+		mux = state.DataRateMux;
 	}
 
 	case RATE_BEHAVIOUR: {
@@ -74,11 +76,15 @@ func (state *State)handle_rates(
 		points = score[0];
 		lifespan = BEHAVIOUR_RATE_LIFESPAN;
 		ban_time = BEHAVIOUR_TIMEOUT;
+		mux = state.BehaviourMux;
 	}
 
 	default:
 		return 0, errors.New("INVALID RATE LIMITER"), http.StatusInternalServerError;
 	}
+
+	mux.Lock();
+	defer mux.Unlock();
 
 	if rate, exists := (*rate_map)[key]; exists {
 

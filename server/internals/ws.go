@@ -61,7 +61,7 @@ func Handle_WS(state *State, w http.ResponseWriter, r *http.Request) {
 	conn, err := state.Upgrader.Upgrade(w, r, http.Header{});
 	if err != nil { return };
 
-	state.Conns[cookie.Value] = conn;
+	state.Conns[get_nonce(cookie)] = conn;
 
 	go func() {
 		// TODO -- define WS communication branches

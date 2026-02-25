@@ -1,14 +1,14 @@
-import { get_events, run_websocket } from "./api.js";
-import {Event, render_event} from "./event.js"
-import { render } from "./initial.js";
+import { get_events, run_websocket } from "./src/api.js";
+import {render_event} from "./src/event.js"
+import { render_menu } from "./src/menu.js";
+import { State } from "./src/state.js";
 
-/** @type {Event[]} */
-let events = [];
+let state = new State();
 
 get_events().then((es) => {
-    events = es
-    render(events);
-    render_event(events, 0);
-    run_websocket(events);
+    state.events = es
+    render_menu(state);
+    render_event(state);
+    run_websocket(state);
 });
 

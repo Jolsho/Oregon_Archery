@@ -1,5 +1,6 @@
 import { delete_event, post_event } from "./api.js";
-import { render } from "./initial.js";
+import { render_menu } from "./menu.js";
+import { State } from "./state.js";
 import { create_elem, random_uint32 } from "./utils.js";
 
 /**
@@ -243,7 +244,7 @@ function render_teamboard(event, team, is_maluable = false) {
         team_header.appendChild(document.createElement("img"));
     }
 
-    team.members.forEach((part) => {
+    team.members.forEach((part, _i) => {
         let entry = create_elem(
             "div",
             teamboard,
@@ -346,6 +347,15 @@ function render_teamboard_mut(event, team, team_existed) {
         submit_team(event, team, teamboard.id),
     );
 
+    if (team.members.length == 0) {
+        team.members.push({
+            name: "",
+            division: 0,
+            score: 0,
+            x_count: 0,
+        });
+    }
+
     team.members.forEach((part, idx) => {
         let entry = create_elem(
             "div",
@@ -371,14 +381,13 @@ function render_teamboard_mut(event, team, team_existed) {
             }
         }
         team_input_field(
-            name,
-            team,
-            event,
-            teamboard.id,
-            entry,
-            part,
+            name, team, event, teamboard.id, entry, part,
             (v) => (team.members[idx].name = v),
         );
+        if (!part.name || idx == team.members.length - 1) {
+            requestAnimationFrame(() => name.focus());
+        }
+
 
         let seperator = create_elem("hr", entry);
 
@@ -416,12 +425,7 @@ function render_teamboard_mut(event, team, team_existed) {
         !!part.score ? (score.value = part.score) : (score.placeholder = "Score");
 
         team_input_field(
-            score,
-            team,
-            event,
-            teamboard.id,
-            entry,
-            part,
+            score, team, event, teamboard.id, entry, part,
             (v) => (team.members[idx].score = Number(v)),
         );
 
@@ -593,19 +597,20 @@ function render_team_leaderboard(container, event) {
     });
 }
 
-function submit_event(
-    events, main, idx, parent, title
-) {
-    let event = events[idx];
+/**
+ *  @param {State} state 
+ *  @param {HTMLElement} parent 
+ *  @param {HTMLElement} title 
+ */
+function submit_event(state, parent, title) {
+    let event = state.get_event();
     if (!!event.title) {
-        let existing_idx = events.findIndex((v) => v.title == event.title);
-        if (existing_idx == -1 || existing_idx == idx) {
+        if (state.is_unique_title(event.title)) {
             post_event(event)
                 .then((ev) => {
-                    events[idx] = ev;
-                    main.innerHTML = "";
-                    render(events);
-                    render_event(events, idx, main);
+                    state.set_event(ev);
+                    render_menu(state);
+                    render_event(state);
                 })
                 .catch((e) => console.error(e));
             return;
@@ -629,15 +634,21 @@ function submit_event(
     }
 }
 
+function delete_current_event() {
+    let current = document.getElementById("current_event_page");
+    !!current && current.remove();
+}
+
 /**
- * @param {Event[]} events
- * @param {Number} idx
- * @param {HTMLElement | null} main
+ * @param {State} state
  * @param {Boolean} is_maluable
  */
-export function render_event(events, idx, main = null, is_maluable = false) {
-    if (events.length <= idx) return;
-    let event = events[idx];
+export function render_event(state, is_maluable = false) {
+
+    let event = state.get_event();
+    if (!event) return;
+
+    delete_current_event();
 
     const is_new = !event.title;
 
@@ -645,12 +656,11 @@ export function render_event(events, idx, main = null, is_maluable = false) {
 
     if (is_maluable && !is_new && !event.is_own) is_maluable = false;
 
-    if (!main) main = document.getElementById("main");
 
-    let scrollable = create_elem("div", main, "event_feed_scrollable");
-    scrollable.id = "current_event_page";
+    let current_event_page = create_elem("div", state.main, "event_feed_scrollable");
+    current_event_page.id = "current_event_page";
 
-    let container = create_elem("div", scrollable, "event_feed_container");
+    let container = create_elem("div", current_event_page, "event_feed_container");
 
     let title_container = create_elem("div", container, "title_container");
 
@@ -671,19 +681,25 @@ export function render_event(events, idx, main = null, is_maluable = false) {
         });
         title.addEventListener("keydown", (e) => {
             if (e.key == "Enter") {
-                submit_event(events, main, idx, title_container, title);
+                submit_event(state, title_container, title);
             }
         });
 
         let remove_event_btn = create_elem("img", null, "team_action_btn");
         remove_event_btn.src = "icons/garbage.svg";
         remove_event_btn.addEventListener("click", () => {
-            delete_event(event.title).then(() => {
-                main.innerHTML = "";
-                events.splice(idx, 1);
-                if (events.length > 0) render_event(events, events.length - 1, main);
-                render(events);
-            });
+            const title_copy = event.title;
+            if (!is_new && !!title_copy) {
+                delete_event(event.title).then(() => {
+                    state.remove_event();
+                    render_event(state);
+                    render_menu(state);
+                });
+            } else {
+                state.remove_event();
+                render_event(state);
+                render_menu(state);
+            }
         });
         title_container.insertBefore(remove_event_btn, title);
 
@@ -694,7 +710,7 @@ export function render_event(events, idx, main = null, is_maluable = false) {
         );
         submit_team_btn.src = "icons/submit.svg";
         submit_team_btn.addEventListener("click", () => {
-            submit_event(events, main, idx, title_container, title);
+            submit_event(state, title_container, title);
         });
         requestAnimationFrame(() => title.focus());
 
@@ -732,7 +748,7 @@ export function render_event(events, idx, main = null, is_maluable = false) {
 
                 scoresPerTeamInput.addEventListener("keydown", (e) => {
                     if (e.key == "Enter") {
-                        submit_event(events, main, idx, title_container, title);
+                        submit_event(state, title_container, title);
                     }
                 });
             } else if (kind === "INDOOR") {
@@ -748,7 +764,7 @@ export function render_event(events, idx, main = null, is_maluable = false) {
             input.name = "event-kind";
             input.value = kind;
 
-            if (i === 0) {
+            if (event.kind === kind || (event.kind == "" && i == 0)) {
                 input.checked = true;
                 event.kind = kind;
                 renderKindExtras(kind);
@@ -767,8 +783,7 @@ export function render_event(events, idx, main = null, is_maluable = false) {
         let edit_btn = create_elem("img", title_container, "team_action_btn");
         edit_btn.src = "icons/edit.svg";
         edit_btn.addEventListener("click", () => {
-            main.removeChild(scrollable);
-            render_event(events, idx, main, true);
+            render_event(state, true);
         });
     } else {
         title_container.insertBefore(document.createElement("div"), title);

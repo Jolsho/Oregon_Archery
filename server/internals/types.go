@@ -13,12 +13,19 @@ import (
 
 type State struct {
 	Events []Event
-	Mux    *sync.RWMutex
+	EventMux    *sync.RWMutex
 
 	TimeOut					map[string]time.Time // IP -> timeout_expires
+	TimeoutMux				*sync.RWMutex
+
 	BehaviourTracker 		map[string]*Rate 	 // IP -> bad_behaviour_rate
+	BehaviourMux			*sync.RWMutex
+
 	SessionCreationRates	map[string]*Rate	 // IP -> rate
+	SessionRateMux			*sync.RWMutex
+
 	DataRates 				map[string]*Rate 	 // Session Cookie -> rate
+	DataRateMux				*sync.RWMutex
 
 	Conns	map[string]*websocket.Conn
 	Upgrader *websocket.Upgrader
@@ -32,12 +39,19 @@ func New_State() *State {
 	if err != nil { panic("CANT LOAD PRIVATE KEY"); }
 	return &State{
 		Events: Events,
-		Mux: &sync.RWMutex{},
+		EventMux: &sync.RWMutex{},
 
+		TimeoutMux: &sync.RWMutex{},
 		TimeOut: make(map[string]time.Time, 32),
+
+		BehaviourMux: &sync.RWMutex{},
 		BehaviourTracker: make(map[string]*Rate, 32),
+
+		SessionRateMux: &sync.RWMutex{},
 		SessionCreationRates: make(map[string]*Rate, 32),
+
 		DataRates: make(map[string]*Rate, 32),
+		DataRateMux: &sync.RWMutex{},
 
 		Upgrader: New_Upgrader(),
 		Conns: make(map[string]*websocket.Conn, 32),

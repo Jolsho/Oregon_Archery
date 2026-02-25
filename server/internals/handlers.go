@@ -2,6 +2,7 @@ package internals
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"slices"
 )
@@ -14,8 +15,8 @@ func Handle_events(state *State, cookie *http.Cookie, w http.ResponseWriter, r *
 
 	switch r.Method {
 	case "GET": {
-		state.Mux.RLock();
-		defer state.Mux.RUnlock();
+		state.EventMux.RLock();
+		defer state.EventMux.RUnlock();
 
 		event_copy := state.Events;
 		for i := range event_copy {
@@ -43,8 +44,8 @@ func Handle_events(state *State, cookie *http.Cookie, w http.ResponseWriter, r *
 			return
 		}
 
-		state.Mux.Lock();
-		defer state.Mux.Unlock();
+		state.EventMux.Lock();
+		defer state.EventMux.Unlock();
 
 		existing := state.Event_exists(event.Title);
 		if existing != nil {
@@ -68,7 +69,6 @@ func Handle_events(state *State, cookie *http.Cookie, w http.ResponseWriter, r *
 				return;
 			}
 			w.Write(bytes);
-			return;
 
 		} else {
 
@@ -90,15 +90,31 @@ func Handle_events(state *State, cookie *http.Cookie, w http.ResponseWriter, r *
 			w.Write(bytes);
 
 			state.Events = append(state.Events, event);
-			return;
+		}
+
+		type NewEventMsg struct {
+			Msg string `json:"msg"`
+			Event Event `json:"event"`
+		}
+		ws_msg := NewEventMsg{
+			Msg: "new_event",
+			Event: event,
+		};
+		for conn_nonce, conn := range state.Conns {
+			if conn_nonce != nonce {
+				err := conn.WriteJSON(ws_msg)
+				if err != nil {
+					log.Println("PUT_EVENT::WS::WRITEJSON -> ", err.Error())
+				}
+			}
 		}
 	} 
 
 	case "DELETE": {
 		title := q.Get("title");
 
-		state.Mux.Lock();
-		defer state.Mux.Unlock();
+		state.EventMux.Lock();
+		defer state.EventMux.Unlock();
 
 		existing := state.Event_exists(title);
 		if existing != nil {
@@ -113,6 +129,23 @@ func Handle_events(state *State, cookie *http.Cookie, w http.ResponseWriter, r *
 		} else {
 			http.Error(w, "EVENT NOT EXISTS", http.StatusBadRequest);
 			return;
+		}
+
+		type DeleteEventMsg struct {
+			Msg string `json:"msg"`
+			Title string `json:"title"`
+		}
+		ws_msg := DeleteEventMsg{
+			Msg: "delete_event",
+			Title: title,
+		};
+		for conn_nonce, conn := range state.Conns {
+			if conn_nonce != nonce {
+				err := conn.WriteJSON(ws_msg)
+				if err != nil {
+					log.Println("DELETE_EVENT::WS::WRITEJSON -> ", err.Error())
+				}
+			}
 		}
 	}
 

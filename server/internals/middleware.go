@@ -7,11 +7,8 @@ import (
 	"time"
 )
 
-const SESSION_COOKIE = "secret";
-
-func Secure_Middleware(state *State, w http.ResponseWriter, r *http.Request) *http.Cookie {
-
-	ip := strings.Split(r.RemoteAddr, ":")[0];
+func is_timed_out(w http.ResponseWriter, state *State, ip string) (is_timedout bool) {
+	state.TimeoutMux.RLock();
 	if timeout, exists := state.TimeOut[ip]; exists {
 		if timeout.Before(time.Now()) {
 			delete(state.TimeOut, ip);
@@ -20,10 +17,22 @@ func Secure_Middleware(state *State, w http.ResponseWriter, r *http.Request) *ht
 				timeout.UTC().Format(time.RFC1123),
 			);
 			http.Error(w, error_str, http.StatusGatewayTimeout);
-			return nil;
+			return true;
 		}
 	}
+	state.TimeoutMux.Unlock();
 
+	return false;
+}
+
+const SESSION_COOKIE = "secret";
+
+func Secure_Middleware(state *State, w http.ResponseWriter, r *http.Request) *http.Cookie {
+
+	ip := strings.Split(r.RemoteAddr, ":")[0];
+	if is_timed_out(w, state, ip) { 
+		return nil; 
+	}
 
 	cookie, err := r.Cookie(SESSION_COOKIE);
 	if err != nil {

@@ -1,19 +1,55 @@
-import { Event } from "./event.js";
+import { Event, render_event } from "./event.js";
+import { State } from "./state.js";
 
 /**
- * @param {Event[]} events 
+ * @param {State} state 
  *  @returns {Promise<void>}
  */
-export async function run_websocket(events) {
+export async function run_websocket(state) {
     let ws = new WebSocket("/ws");
 
-    ws.onopen = (event) => {
+    ws.onopen = (_event) => {
         console.log("WebSocket connected");
     };
 
     ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        events.onMessage?.(data);
+        switch (data.msg) {
+        case "new_event": {
+            let idx = state.find_event_idx(data.event.title);
+            if (idx > 0) {
+
+                // we already processed our own via http.
+                if (state.get_event(idx).is_own) return;
+
+                state.set_event(data.event, idx);
+
+            } else {
+                state.events.push(data.event);
+            }
+
+            render_menu(state);
+            if (state.current_event_idx == idx) {
+                render_event(state);
+            }
+            return;
+        }
+
+        case "delete_event": {
+            let idx = state.find_event_idx(data.title);
+            if (idx < 0) return;
+
+            // we already processed our own via http.
+            if (state.get_event(idx).is_own) return;
+            state.remove_event(idx);
+
+            render_menu(state);
+            if (state.current_event_idx == idx) {
+                render_event(state);
+            }
+            return;
+        }
+        }
     };
 
     ws.onerror = (error) => {

@@ -1,0 +1,30 @@
+:root {
+    --primary: rgba(250, 250, 250, 1);
+    --primary-dark: rgba(240, 240, 240, 1);
+    --secondary: rgba(255, 255, 255, 1);
+    --input-color: rgba(255, 255, 255, 1);
+}
+
+body {
+    margin: 0;
+    background-color: var(--primary);
+}
+
+.roboto-mono-norm {
+    font-family: "Roboto Mono", monospace;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-style: normal;
+}
+
+
+.main_display {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: auto;
+}
+
+
