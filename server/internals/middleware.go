@@ -1,36 +1,19 @@
 package internals
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
-	"time"
 )
 
-func is_timed_out(w http.ResponseWriter, state *State, ip string) (is_timedout bool) {
-	state.TimeoutMux.RLock();
-	if timeout, exists := state.TimeOut[ip]; exists {
-		if timeout.Before(time.Now()) {
-			delete(state.TimeOut, ip);
-		} else {
-			error_str := fmt.Sprintf("TIMEOUT::%s", 
-				timeout.UTC().Format(time.RFC1123),
-			);
-			http.Error(w, error_str, http.StatusGatewayTimeout);
-			return true;
-		}
-	}
-	state.TimeoutMux.Unlock();
-
-	return false;
-}
 
 const SESSION_COOKIE = "secret";
 
-func Secure_Middleware(state *State, w http.ResponseWriter, r *http.Request) *http.Cookie {
+func Secure_Middleware(net *Networker, w http.ResponseWriter, r *http.Request) *http.Cookie {
 
 	ip := strings.Split(r.RemoteAddr, ":")[0];
-	if is_timed_out(w, state, ip) { 
+
+	if expires, timedout := net.RateLimiter.is_timed_out(ip); timedout { 
+		http.Error(w, "TIMEOUT UNTIL " + expires, http.StatusGatewayTimeout);
 		return nil; 
 	}
 
@@ -41,14 +24,14 @@ func Secure_Middleware(state *State, w http.ResponseWriter, r *http.Request) *ht
 			return nil;
 		}
 
-		timeout, err, status := state.handle_rates(RATE_SESSION_CREATION, ip);
+		timeout, err, status := net.RateLimiter.handle_rates(RATE_SESSION_CREATION, ip);
 		if err != nil { 
-			state.TimeOut[ip] = time.Now().Add(timeout);
+			net.RateLimiter.handle_timeout(ip, timeout)
 			http.Error(w, err.Error(), status);
 			return nil;
 		};
 
-		value, expire, ok := generate_signed_cookie_value(state, w);
+		value, expire, ok := generate_signed_cookie_value(net, w);
 		if !ok { 
 			return nil;
 		}
@@ -68,20 +51,20 @@ func Secure_Middleware(state *State, w http.ResponseWriter, r *http.Request) *ht
 
 	nonce := get_nonce(cookie);
 
-	if !verify_cookie(state, cookie, w) { 
+	if !verify_cookie(net, cookie, w) { 
 		score := bad_behaviour_score(INFRACTION_INVALID_COOKIE);
-		timeout, err, status := state.handle_rates(RATE_BEHAVIOUR, nonce, score);
+		timeout, err, status := net.RateLimiter.handle_rates(RATE_BEHAVIOUR, nonce, score);
 		if err != nil { 
-			state.TimeOut[ip] = time.Now().Add(timeout);
+			net.RateLimiter.handle_timeout(ip, timeout)
 			http.Error(w, err.Error(), status);
 			return nil; 
 		};
 		return nil;
 	}
 
-	timeout, err, status := state.handle_rates(RATE_DATA, nonce);
+	timeout, err, status := net.RateLimiter.handle_rates(RATE_DATA, nonce);
 	if err != nil { 
-		state.TimeOut[ip] = time.Now().Add(timeout);
+		net.RateLimiter.handle_timeout(ip, timeout)
 		http.Error(w, err.Error(), status);
 		return nil; 
 	};

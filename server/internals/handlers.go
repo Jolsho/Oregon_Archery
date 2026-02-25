@@ -8,7 +8,7 @@ import (
 )
 
 
-func Handle_events(state *State, cookie *http.Cookie, w http.ResponseWriter, r *http.Request) {
+func Handle_events(net *Networker, state *State, cookie *http.Cookie, w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query();
 
 	nonce := get_nonce(cookie);
@@ -100,7 +100,7 @@ func Handle_events(state *State, cookie *http.Cookie, w http.ResponseWriter, r *
 			Msg: "new_event",
 			Event: event,
 		};
-		for conn_nonce, conn := range state.Conns {
+		for conn_nonce, conn := range net.Conns {
 			if conn_nonce != nonce {
 				err := conn.WriteJSON(ws_msg)
 				if err != nil {
@@ -139,7 +139,7 @@ func Handle_events(state *State, cookie *http.Cookie, w http.ResponseWriter, r *
 			Msg: "delete_event",
 			Title: title,
 		};
-		for conn_nonce, conn := range state.Conns {
+		for conn_nonce, conn := range net.Conns {
 			if conn_nonce != nonce {
 				err := conn.WriteJSON(ws_msg)
 				if err != nil {

@@ -29,7 +29,7 @@ func generate_cookie_hash(w http.ResponseWriter, nonce, expire string) ([]byte, 
 }
 
 func generate_signed_cookie_value(
-	state *State, w http.ResponseWriter, 
+	net *Networker, w http.ResponseWriter, 
 ) (string, time.Time, bool) {
 
 	expire := time.Now().Add(24 * time.Hour);
@@ -52,7 +52,7 @@ func generate_signed_cookie_value(
 	if !ok { return "", expire, false; }
 
 
-	sig_bytes, err := ecdsa.SignASN1(rand.Reader, state.PrivKey, hash);
+	sig_bytes, err := ecdsa.SignASN1(rand.Reader, net.PrivKey, hash);
 	if err != nil {
 		http.Error(w, "SIGNATURE ERROR", http.StatusInternalServerError);
 		return "", expire, false;
@@ -69,7 +69,7 @@ func get_nonce(cookie *http.Cookie) string {
 	return values[1];
 }
 
-func verify_cookie(state *State, cookie *http.Cookie, w http.ResponseWriter) bool {
+func verify_cookie(net *Networker, cookie *http.Cookie, w http.ResponseWriter) bool {
 
 	values := strings.Split(cookie.Value, ":")
 	if len(values) != 3 {
@@ -100,14 +100,14 @@ func verify_cookie(state *State, cookie *http.Cookie, w http.ResponseWriter) boo
 		http.Error(w, "DECODE SIGNATURE", http.StatusUnauthorized)
 		return false
 	}
-	if !ecdsa.VerifyASN1(state.PubKey, hash, signature) {
+	if !ecdsa.VerifyASN1(net.PubKey, hash, signature) {
 		http.Error(w, "INVALID COOKIE", http.StatusUnauthorized);
 		return false;
 	}
 
 
 	if expire.Before(time.Now()) {
-		value, expire, ok := generate_signed_cookie_value(state, w);
+		value, expire, ok := generate_signed_cookie_value(net, w);
 		if !ok { return false; }
 
 		cookie.Value = value;

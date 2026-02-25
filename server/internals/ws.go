@@ -51,17 +51,21 @@ func New_Upgrader() *websocket.Upgrader {
 	};
 }
 
-func Handle_WS(state *State, w http.ResponseWriter, r *http.Request) {
+func Handle_WS(
+	net *Networker, state *State, 
+	cookie *http.Cookie,
+	w http.ResponseWriter, r *http.Request,
+) {
 	cookie, err := r.Cookie(SESSION_COOKIE);
 	if err != nil { 
 		http.Error(w, "NO COOKIE", http.StatusUnauthorized);
 		return 
 	};
 
-	conn, err := state.Upgrader.Upgrade(w, r, http.Header{});
+	conn, err := net.Upgrader.Upgrade(w, r, http.Header{});
 	if err != nil { return };
 
-	state.Conns[get_nonce(cookie)] = conn;
+	net.Conns[get_nonce(cookie)] = conn;
 
 	go func() {
 		// TODO -- define WS communication branches

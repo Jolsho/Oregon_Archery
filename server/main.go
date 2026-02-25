@@ -20,29 +20,39 @@ func handleShutdown(onShutdown func()) {
     }()
 }
 
+// TODO --> NEED TO IMPLEMENT LOGGING...
+// like for bad actors... 
+// make sure we can find their IPs later on.
+// just output to a log file...
 
 func main() {
 	state := internals.New_State();
+	net := internals.New_Networker();
+
+
+	//////////////////////////////////////////////
+	// 				PATHS 	  
 
 	dst, ok := os.LookupEnv("dst_dir");
-	if !ok {
-		dst = "../ui/";
-	}
+	if !ok { dst = "../ui/"; }
 
 	mux := http.NewServeMux();
 	mux.Handle("/", http.FileServer(http.Dir(dst)));
 
 	mux.HandleFunc("/events", func (w http.ResponseWriter, r *http.Request) {
-		if cookie := internals.Secure_Middleware(state, w, r); cookie != nil {
-			internals.Handle_events(state, cookie, w, r);
+		if cookie := internals.Secure_Middleware(net, w, r); cookie != nil {
+			internals.Handle_events(net, state, cookie, w, r);
 		}
 	})
 
 	mux.HandleFunc("/ws", func (w http.ResponseWriter, r *http.Request) {
-		if cookie := internals.Secure_Middleware(state, w, r); cookie != nil {
-			internals.Handle_WS(state, w, r);
+		if cookie := internals.Secure_Middleware(net, w, r); cookie != nil {
+			internals.Handle_WS(net, state, cookie, w, r);
 		}
 	})
+
+	//////////////////////////////////////////////
+
 
 	server := &http.Server{
 		Addr: "0.0.0.0:8080",
@@ -51,7 +61,7 @@ func main() {
 	};
 
 	handleShutdown(func() {
-		state.Persist();
+		net.Shutdown();
 	})
 
 	log.Println("Started server!");
