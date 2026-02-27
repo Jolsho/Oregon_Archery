@@ -46,7 +46,6 @@ func (limiter *RateLimiter) Handle_timeout(ip string, timeout time.Duration, sta
 	if r, exists := limiter.IpRates[ip]; exists {
 		r.Timeout = time.Now().Add(timeout);
 		r.Status = status;
-		// TASK_5
 	} else {
 		limiter.IpRates[ip] = &Rates{
 			Score: 0,

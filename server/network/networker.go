@@ -49,7 +49,7 @@ func New_Networker() *Networker {
 	workers := utils.NewWorkGroup()
 
 	// LOGGER
-	logger := New_logger("ohsal.log");
+	logger := New_logger();
 	go logger.start_writer(workers);
 	logger.Log(DEBUG_LEVEL, "LOGGER STARTED");
 
