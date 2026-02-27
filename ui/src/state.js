@@ -1,4 +1,5 @@
 import { Event } from "./event.js";
+import { create_elem } from "./utils.js";
 
 export class State {
     constructor() {
@@ -10,6 +11,21 @@ export class State {
 
         /** @type {HTMLElement} */
         this.main = document.getElementById("main");
+
+        /** @type {HTMLElement} */
+        this.header = create_elem("div", this.main, "header");
+
+        /** @type {boolean} */
+        this.menu_is_open = true;
+
+        /** @type {string} */
+        this.connection_status = "Connected";
+
+        /** @type {number} */
+        this.retry_count = 0;
+
+        /** @type {boolean} */
+        this.manual_status = false;
     };
 
     /** 

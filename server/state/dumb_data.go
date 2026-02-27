@@ -1,6 +1,9 @@
-package internals
+package state
 
-import "math/rand"
+import (
+	"math/rand"
+	"server/utils"
+)
 
 var kinds = []string{"INDOOR", "OUTDOOR"}
 
@@ -8,9 +11,7 @@ var DIVISIONS = []Division{
 	{ Name: "OPEN", 		Threshold: 280, }, 
 	{ Name: "MODERN", 		Threshold: 265, }, 
 
-	// TODO --> NOT REAL OLYMPIC THRESHOLD
-	// ASK CHRIS FOR THIS
-	{ Name: "OLYMPIC", 		Threshold: 260, },  
+	{ Name: "OLYMPIC", 		Threshold: 260, }, // TASK_3
 
 	{ Name: "TRADITIONAL", 	Threshold: 185, }, 
 }
@@ -28,7 +29,7 @@ var Events = []Event{
 		Leaders:   map[string]int{},
 		Divisions: DIVISIONS,
 		Kind: "INDOOR",
-		Secret: Rand_8_str_ignored(),
+		Secret: utils.Rand_8_str_ignored(),
 		Teams: map[string]Team{
 			"Thurston": {
 				Name:   "Thurston",
@@ -63,7 +64,7 @@ var Events = []Event{
 		Leaders:   map[string]int{},
 		Divisions: DIVISIONS,
 		Kind: "INDOOR",
-		Secret: Rand_8_str_ignored(),
+		Secret: utils.Rand_8_str_ignored(),
 		Teams: map[string]Team{
 			"Central Catholic": {
 				Name:   "Central Catholic",
@@ -113,7 +114,7 @@ var Events = []Event{
 		Divisions: DIVISIONS,
 		Kind: "OUTDOOR",
 		ScoresPerTeam: 3,
-		Secret: Rand_8_str_ignored(),
+		Secret: utils.Rand_8_str_ignored(),
 		Teams: map[string]Team{
 			"Springfield": {
 				Name:   "Springfield",
@@ -173,7 +174,7 @@ var Events = []Event{
 		Divisions: DIVISIONS,
 		Kind: "OUTDOOR",
 		ScoresPerTeam: 3,
-		Secret: Rand_8_str_ignored(),
+		Secret: utils.Rand_8_str_ignored(),
 		Teams: map[string]Team{
 			"Roseburg": {
 				Name:   "Roseburg",

@@ -1,0 +1,30 @@
+FRIDAY::
+
+    TASK_9 :: 
+        GET A DOMAIN NAME, SETUP DNS, and CERTBOT
+        FIREWALL??
+        RUN SERVER
+
+
+SATURDAY::
+
+    TASK_3 :: server/internals/dumb_data.go
+        Dont have "OLYMPIC" Threshold in DIVISIONS
+        ask CHRIS what it should be
+
+
+
+NEXT WEEK::
+
+    TASK_6 :: server/internals/logger.go
+        implement log file churn when reaching a threshold size
+        need a way to keep track of file names
+        not sure how to do that...
+
+
+
+MAYBE?
+
+    TASK_7 :: server/internals/ws.go
+        handle ws errors to restrict bad behaviour...
+        not sure what sort of meaningful errors will be here though

@@ -1,17 +1,21 @@
-package internals
+package handlers
 
 import (
 	"encoding/json"
-	"log"
+	"fmt"
 	"net/http"
+	"server/network"
+	state_p "server/state"
 	"slices"
 )
 
 
-func Handle_events(net *Networker, state *State, cookie *http.Cookie, w http.ResponseWriter, r *http.Request) {
+func Handle_events(net *network.Networker, state *state_p.State, w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query();
 
-	nonce := get_nonce(cookie);
+	cookie, _ := r.Cookie(network.SESSION_COOKIE)
+	nonce := network.Get_nonce(cookie);
+	ip := network.Get_client_ip(r);
 
 	switch r.Method {
 	case "GET": {
@@ -36,10 +40,11 @@ func Handle_events(net *Networker, state *State, cookie *http.Cookie, w http.Res
 
 	case "POST", "PUT": {
 
-		event := DefaultEvent();
+		event := state_p.DefaultEvent();
 		event.Kind = "OUTDOOR";
 		err := json.NewDecoder(r.Body).Decode(&event)
 		if err != nil {
+			net.Bad_Behaviour(network.INFRACTION_MALFORMED_DATA, ip);
 			http.Error(w, "invalid JSON body", http.StatusBadRequest)
 			return
 		}
@@ -50,6 +55,12 @@ func Handle_events(net *Networker, state *State, cookie *http.Cookie, w http.Res
 		existing := state.Event_exists(event.Title);
 		if existing != nil {
 			if existing.Secret != nonce {
+
+				log := fmt.Sprintf("ATTEMPTED ACCESS OF UNOWNED EVENT from %s", ip);
+				net.Logger.Log(network.INFO_LEVEL, log)
+
+				net.Bad_Behaviour(network.INFRACTION_ATTEMPTED_ACCESS, ip);
+
 				http.Error(w, "INVALID SECRET", http.StatusUnauthorized);
 				return
 			}
@@ -58,6 +69,12 @@ func Handle_events(net *Networker, state *State, cookie *http.Cookie, w http.Res
 
 			err := existing.Sanitize();
 			if err != nil {
+
+				log := fmt.Sprintf("EVENT from %s FAILED SANITIZATION", ip);
+				net.Logger.Log(network.INFO_LEVEL, log)
+
+				net.Bad_Behaviour(network.INFRACTION_MALFORMED_DATA, ip);
+
 				http.Error(w, err.Error(), http.StatusBadRequest);
 				return;
 			}
@@ -65,6 +82,8 @@ func Handle_events(net *Networker, state *State, cookie *http.Cookie, w http.Res
 			w.Header().Set("Content-Type", "application/json")
 			bytes, err := json.Marshal(event)
 			if err != nil {
+				net.Logger.Log(network.WARNING_LEVEL, "EVENT JSON MARSHAL FAILED...")
+
 				http.Error(w, "EVENT MARSHAL FAILED", http.StatusInternalServerError);
 				return;
 			}
@@ -77,6 +96,12 @@ func Handle_events(net *Networker, state *State, cookie *http.Cookie, w http.Res
 
 			err := event.Sanitize();
 			if err != nil {
+
+				log := fmt.Sprintf("EVENT from %s FAILED SANITIZATION", ip);
+				net.Logger.Log(network.INFO_LEVEL, log)
+
+				net.Bad_Behaviour(network.INFRACTION_MALFORMED_DATA, ip);
+
 				http.Error(w, err.Error(), http.StatusBadRequest);
 				return;
 			}
@@ -84,6 +109,7 @@ func Handle_events(net *Networker, state *State, cookie *http.Cookie, w http.Res
 			w.Header().Set("Content-Type", "application/json")
 			bytes, err := json.Marshal(event)
 			if err != nil {
+				net.Logger.Log(network.WARNING_LEVEL, "EVENT JSON MARSHAL FAILED...")
 				http.Error(w, "EVENT MARSHAL FAILED", http.StatusInternalServerError);
 				return;
 			}
@@ -94,7 +120,7 @@ func Handle_events(net *Networker, state *State, cookie *http.Cookie, w http.Res
 
 		type NewEventMsg struct {
 			Msg string `json:"msg"`
-			Event Event `json:"event"`
+			Event state_p.Event `json:"event"`
 		}
 		ws_msg := NewEventMsg{
 			Msg: "new_event",
@@ -102,9 +128,10 @@ func Handle_events(net *Networker, state *State, cookie *http.Cookie, w http.Res
 		};
 		for conn_nonce, conn := range net.Conns {
 			if conn_nonce != nonce {
-				err := conn.WriteJSON(ws_msg)
+				err := conn.Conn.WriteJSON(ws_msg)
 				if err != nil {
-					log.Println("PUT_EVENT::WS::WRITEJSON -> ", err.Error())
+					log := fmt.Sprintf("EVENT WRITE TO WS :: %s", err.Error());
+					net.Logger.Log(network.WARNING_LEVEL, log);
 				}
 			}
 		}
@@ -119,15 +146,23 @@ func Handle_events(net *Networker, state *State, cookie *http.Cookie, w http.Res
 		existing := state.Event_exists(title);
 		if existing != nil {
 			if existing.Secret != nonce {
+
+				log := fmt.Sprintf("ATTEMPTED ACCESS OF UNOWNED EVENT from %s", ip);
+				net.Logger.Log(network.INFO_LEVEL, log)
+
+				net.Bad_Behaviour(network.INFRACTION_ATTEMPTED_ACCESS, ip);
+
 				http.Error(w, "INVALID SECRET", http.StatusUnauthorized);
 				return;
 			}
-			state.Events = slices.DeleteFunc(state.Events, func(ev Event) bool {
+			state.Events = slices.DeleteFunc(state.Events, func(ev state_p.Event) bool {
 				return ev.Secret == nonce && ev.Title == title;
 			}); 
 
 		} else {
 			http.Error(w, "EVENT NOT EXISTS", http.StatusBadRequest);
+			net.Bad_Behaviour(network.INFRACTION_MALFORMED_DATA, ip);
+
 			return;
 		}
 
@@ -141,15 +176,21 @@ func Handle_events(net *Networker, state *State, cookie *http.Cookie, w http.Res
 		};
 		for conn_nonce, conn := range net.Conns {
 			if conn_nonce != nonce {
-				err := conn.WriteJSON(ws_msg)
+				err := conn.Conn.WriteJSON(ws_msg)
 				if err != nil {
-					log.Println("DELETE_EVENT::WS::WRITEJSON -> ", err.Error())
+					log := fmt.Sprintf("EVENT DELETE TO WS :: %s", err.Error());
+					net.Logger.Log(network.WARNING_LEVEL, log)
 				}
 			}
 		}
 	}
 
 	default:
+		log := fmt.Sprintf("INVALID METHOD from %s", ip);
+		net.Logger.Log(network.INFO_LEVEL, log)
+
+		net.Bad_Behaviour(network.INFRACTION_MALFORMED_DATA, ip);
+
 		http.Error(w, "INVALID METHOD", http.StatusMethodNotAllowed);
 		return;
 	}

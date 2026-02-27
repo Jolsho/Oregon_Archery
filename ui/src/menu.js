@@ -1,3 +1,4 @@
+import { run_websocket } from "./api.js";
 import { render_event } from "./event.js";
 import { State } from "./state.js";
 import { create_elem } from "./utils.js";
@@ -8,30 +9,62 @@ export function delete_menu() {
 
     let mini = document.getElementById("menu_minimizer");
     !!mini && mini.remove();
+
+    let monitor = document.getElementById("connection_monitor");
+    !!monitor && monitor.remove();
+
+    let refresh = document.getElementById("status_refresh");
+    !!refresh && refresh.remove();
 }
 
+/** @param {State} state */
+function render_connection_monitor(state) {
+    let monitor = create_elem("div", state.header, "monitor");
+    monitor.id = "connection_monitor";
 
-let is_open = false;
-/**
- * @param {State} state
-*/
+    let status = create_elem("h1", monitor, "roboto-mono-norm", "status");
+    status.id = "connection_status";
+
+    update_connection_status(state);
+}
+
+/** @param {State} state */
+export function update_connection_status(state) {
+    let status = document.getElementById("connection_status");
+    status.textContent = state.connection_status;
+
+    if (state.manual_status) {
+        let refresh = document.getElementById("status_refresh");
+        if (!refresh) refresh = create_elem("img", state.header, "status_refresh");
+
+        refresh.id = "status_refresh";
+        refresh.src = "icons/refresh.svg"
+        refresh.addEventListener("click", () => {
+            state.manual_status = false;
+            run_websocket(state);
+            refresh.remove();
+        });
+    }
+}
+
+/** @param {State} state */
 export function render_menu(state) {
     delete_menu();
 
-    if (!is_open && state.events.length == 0) is_open = true;
+    if (!state.menu_is_open && state.events.length == 0) state.menu_is_open = true;
 
-
-    let menu = create_elem("div", state.main, 
-        "scrollable", (is_open ? "open" : "close")
+    let menu = create_elem("div", state.header, 
+        "scrollable", (state.menu_is_open ? "open" : "close")
     );
     menu.id = "menu";
 
-    let minimizer = create_elem("img", state.main, "scrollable_minimizer", (!is_open) && "flipped");
+
+    let minimizer = create_elem("img", state.header, "scrollable_minimizer", (!state.menu_is_open) && "flipped");
     minimizer.src = "icons/arrow_back.svg"
     minimizer.id = "menu_minimizer";
     minimizer.addEventListener("click", () => {
-        is_open = !is_open;
-        if (is_open) {
+        state.menu_is_open = !state.menu_is_open;
+        if (state.menu_is_open) {
             menu.classList.replace("close", "open");
             minimizer.classList.remove("flipped");
         } else {
@@ -40,6 +73,7 @@ export function render_menu(state) {
         }
     });
 
+    render_connection_monitor(state);
 
     let img_container = create_elem("div", menu, "header_img_container");
     let img = create_elem("img", img_container, "header_img");
@@ -55,7 +89,7 @@ export function render_menu(state) {
         state.new_current_event();
         render_event(state);
 
-        is_open = !is_open;
+        state.menu_is_open = !state.menu_is_open;
         minimizer.classList.add("flipped");
         menu.classList.replace("open", "close");
     };
@@ -80,7 +114,7 @@ export function render_menu(state) {
             state.new_current_event(i);
             render_event(state);
 
-            is_open = !is_open;
+            state.menu_is_open = !state.menu_is_open;
             minimizer.classList.add("flipped");
             menu.classList.replace("open", "close");
         };

@@ -11,4 +11,3 @@ get_events().then((es) => {
     render_event(state);
     run_websocket(state);
 });
-

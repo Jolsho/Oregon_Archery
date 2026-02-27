@@ -47,9 +47,15 @@ const MASCOT_NAMES = [
     "Knights",
     "Wolves",
 ];
+const DIVISIONS = [
+	{ name: "OPEN", 		threshold: 280, }, 
+	{ name: "MODERN", 		threshold: 265, }, 
+	{ name: "OLYMPIC", 		threshold: 260, }, // TASK_3
+	{ name: "TRADITIONAL", 	threshold: 185, }, 
+];
 
 export class Event {
-    constructor(title = "", teams = [], divisions = [], kind = "OUTDOOR") {
+    constructor(title="", teams=[], divisions=DIVISIONS, kind = "OUTDOOR") {
         /** @type {string} */
         this.title = title;
 
@@ -57,7 +63,10 @@ export class Event {
         this.scores_per_team = 6;
 
         /** @type {boolean} */
-        this.is_own = false;
+        this.is_own = true;
+
+        /** @type {boolean} */
+        this.is_persisted = false;
 
         /** @type {Division[]} */
         this.divisions = divisions;
@@ -109,6 +118,7 @@ function calculate_leaders(event) {
 }
 
 /**
+ * @param {State} state
  * @param {HTMLElement} element
  * @param {Team} team
  * @param {Event} event
@@ -118,6 +128,7 @@ function calculate_leaders(event) {
  * @param {(string) => void} input_callback
  */
 function team_input_field(
+    state,
     element,
     team,
     event,
@@ -142,46 +153,40 @@ function team_input_field(
 
             let parent = board.parentNode;
 
-            parent.insertBefore(render_teamboard(event, team, true), board);
+            parent.insertBefore(render_teamboard(state, event, team, true), board);
             parent.removeChild(board);
         } else if (e.shiftKey && e.key == "Backspace") {
             board.removeChild(entry);
             team.members = team.members.filter((p) => p !== participant);
         } else if (e.key == "Enter") {
-            submit_team(event, team, teamboard_id);
+            submit_team(state, team);
         }
     });
 }
 
 /**
- * @param {Event} event
+ * @param {State} state
  * @param {Team} team
- * @param {string} board_id
  */
-function submit_team(event, team, board_id) {
+function submit_team(state, team) {
+    let event = state.get_event();
     if (!team.name) {
         team.name = MASCOT_NAMES[random_uint32() % 20];
+        while (!!event.teams[team.name]) {
+            team.name = MASCOT_NAMES[random_uint32() % 20];
+        }
     }
 
     team.members = team.members.filter((member) => !!member.name);
 
     event.teams[team.name] = team;
 
-    post_event(event)
-        .then((ev) => {
-            event = ev;
-            let board = document.getElementById(board_id);
-            let parent = board.parentNode;
-
-            parent.insertBefore(render_teamboard(event, team, false), board);
-            parent.removeChild(board);
-
-            let leader_grid = document.getElementsByClassName("leaderboard_grid")[0];
-            leader_grid.innerHTML = "";
-            calculate_leaders(event);
-            render_leaderboard(leader_grid, event);
-        })
-        .catch((e) => console.error(e));
+    event.is_persisted = false;
+    event.is_own = true;
+    post_event(event);
+    state.set_event(event);
+    render_menu(state);
+    render_event(state);
 }
 
 /**
@@ -190,7 +195,7 @@ function submit_team(event, team, board_id) {
  * @param {Boolean} is_maluable
  * @returns {HTMLElement}
  */
-function render_teamboard(event, team, is_maluable = false) {
+function render_teamboard(state, event, team, is_maluable = false) {
     const team_existed = !!team;
     team = !team_existed
         ? {
@@ -202,7 +207,7 @@ function render_teamboard(event, team, is_maluable = false) {
         : team;
 
     if (is_maluable || !team_existed)
-        return render_teamboard_mut(event, team, team_existed);
+        return render_teamboard_mut(state, event, team, team_existed);
 
     team.members.sort(
         (a, b) => b.score - a.score || b.x_count - a.x_count || b.name - a.name,
@@ -237,7 +242,7 @@ function render_teamboard(event, team, is_maluable = false) {
             let board = document.getElementById(teamboard.id);
             let parent = board.parentNode;
 
-            parent.insertBefore(render_teamboard(event, team, true), board);
+            parent.insertBefore(render_teamboard(state, event, team, true), board);
             parent.removeChild(board);
         });
     } else {
@@ -291,12 +296,13 @@ function render_teamboard(event, team, is_maluable = false) {
 }
 
 /**
+ * @param {State} state
  * @param {Event} event
  * @param {Team | null} team
  * @param {Boolean} team_existed
  * @returns {HTMLElement}
  */
-function render_teamboard_mut(event, team, team_existed) {
+function render_teamboard_mut(state, event, team, team_existed) {
     let teamboard = create_elem("div", null, "team_scoreboard");
     teamboard.id = random_uint32();
 
@@ -321,20 +327,13 @@ function render_teamboard_mut(event, team, team_existed) {
     remove_team_btn.classList.add("team_action_btn", "left");
     remove_team_btn.addEventListener("click", () => {
         delete event.teams[team.name];
-        post_event(event)
-            .then((ev) => {
-                event = ev;
-                let board = document.getElementById(teamboard.id);
-                board.parentNode.removeChild(board);
-                delete event.teams[team.name];
 
-                let leader_grid =
-                    document.getElementsByClassName("leaderboard_grid")[0];
-                leader_grid.innerHTML = "";
-                calculate_leaders(event);
-                render_leaderboard(leader_grid, event);
-            })
-            .catch((e) => console.error(e));
+        event.is_persisted = false;
+        event.is_own = true;
+        post_event(event);
+        state.set_event(event);
+        render_menu(state);
+        render_event(state);
     });
     team_header.insertBefore(remove_team_btn, team_name_div);
 
@@ -344,7 +343,7 @@ function render_teamboard_mut(event, team, team_existed) {
     team_header.appendChild(submit_team_btn);
 
     submit_team_btn.addEventListener("click", () =>
-        submit_team(event, team, teamboard.id),
+        submit_team(state, team)
     );
 
     if (team.members.length == 0) {
@@ -380,7 +379,7 @@ function render_teamboard_mut(event, team, team_existed) {
                 requestAnimationFrame(() => name.focus());
             }
         }
-        team_input_field(
+        team_input_field(state,
             name, team, event, teamboard.id, entry, part,
             (v) => (team.members[idx].name = v),
         );
@@ -424,7 +423,7 @@ function render_teamboard_mut(event, team, team_existed) {
         let score = create_elem("input", entry, "number");
         !!part.score ? (score.value = part.score) : (score.placeholder = "Score");
 
-        team_input_field(
+        team_input_field(state,
             score, team, event, teamboard.id, entry, part,
             (v) => (team.members[idx].score = Number(v)),
         );
@@ -436,7 +435,7 @@ function render_teamboard_mut(event, team, team_existed) {
             ? (x_count.value = part.x_count)
             : (x_count.placeholder = "Xs");
 
-        team_input_field(
+        team_input_field(state,
             x_count,
             team,
             event,
@@ -462,7 +461,7 @@ function render_teamboard_mut(event, team, team_existed) {
         let board = document.getElementById(teamboard.id);
         let parent = board.parentNode;
 
-        parent.insertBefore(render_teamboard(event, team, true), board);
+        parent.insertBefore(render_teamboard(state, event, team, true), board);
         parent.removeChild(board);
     });
 
@@ -555,7 +554,7 @@ function render_team_leaderboard(container, event) {
     team_order.sort((a, b) => b.score - a.score || b.x_count - a.x_count);
 
     // I THINK THEY WANT TO SEE ALL TEAMS...
-    // team_order = team_order.slice(0,3);
+    team_order = team_order.slice(0, 9);
 
     if (team_order.length == 0) return;
 
@@ -606,13 +605,13 @@ function submit_event(state, parent, title) {
     let event = state.get_event();
     if (!!event.title) {
         if (state.is_unique_title(event.title)) {
-            post_event(event)
-                .then((ev) => {
-                    state.set_event(ev);
-                    render_menu(state);
-                    render_event(state);
-                })
-                .catch((e) => console.error(e));
+
+            event.is_persisted = false;
+            event.is_own = false;
+            post_event(event);
+            state.set_event(event);
+            render_menu(state);
+            render_event(state);
             return;
         }
         let err_msg = document.getElementById("event_err_msg");
@@ -798,7 +797,7 @@ export function render_event(state, is_maluable = false) {
     let team_boards = create_elem("div", container, "team_boards");
 
     Object.values(event.teams).map((team) =>
-        team_boards.appendChild(render_teamboard(event, team)),
+        team_boards.appendChild(render_teamboard(state, event, team)),
     );
 
     if (!is_new && event.is_own) {
@@ -812,7 +811,7 @@ export function render_event(state, is_maluable = false) {
         let add = create_elem("img", add_cont, "add_team");
         add.src = "icons/add.svg";
         add.addEventListener("click", () => {
-            team_boards.insertBefore(render_teamboard(event, null, true), add_cont);
+            team_boards.insertBefore(render_teamboard(state, event, null, true), add_cont);
         });
 
         create_elem("div", add, "vert");

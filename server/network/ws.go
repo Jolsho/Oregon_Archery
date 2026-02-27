@@ -1,4 +1,4 @@
-package internals
+package network
 
 import (
 	"net/http"
@@ -8,14 +8,11 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-const READ_BUFFER_SIZE = 1024;
-const WRITE_BUFFER_SIZE = 1024;
-
 func ws_error_handler(
 	w http.ResponseWriter, r *http.Request, 
 	status int, reason error,
 ) {
-	// TODO -- record errors? to restrict bad behaviour...
+	// TASK_7
 	http.Error(w, reason.Error(), status)
 };
 
@@ -41,6 +38,8 @@ func check_origin(r *http.Request) bool {
     return ok
 };
 
+const READ_BUFFER_SIZE = 1024;
+const WRITE_BUFFER_SIZE = 1024;
 func New_Upgrader() *websocket.Upgrader {
 	return &websocket.Upgrader{
 		HandshakeTimeout: time.Duration(time.Duration(4).Seconds()),
@@ -50,25 +49,3 @@ func New_Upgrader() *websocket.Upgrader {
 		Error: ws_error_handler,
 	};
 }
-
-func Handle_WS(
-	net *Networker, state *State, 
-	cookie *http.Cookie,
-	w http.ResponseWriter, r *http.Request,
-) {
-	cookie, err := r.Cookie(SESSION_COOKIE);
-	if err != nil { 
-		http.Error(w, "NO COOKIE", http.StatusUnauthorized);
-		return 
-	};
-
-	conn, err := net.Upgrader.Upgrade(w, r, http.Header{});
-	if err != nil { return };
-
-	net.Conns[get_nonce(cookie)] = conn;
-
-	go func() {
-		// TODO -- define WS communication branches
-	}();
-}
-
