@@ -607,7 +607,7 @@ function submit_event(state, parent, title) {
         if (state.is_unique_title(event.title)) {
 
             event.is_persisted = false;
-            event.is_own = false;
+            event.is_own = true;
             post_event(event);
             state.set_event(event);
             render_menu(state);

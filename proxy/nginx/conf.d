@@ -1,6 +1,6 @@
 server {
     listen 80;
-    server_name jolsho.com www.jolsho.com;
+    server_name testohsal.com www.testohsal.com;
 
     # ACME challenge path for Certbot
     location /.well-known/acme-challenge/ {
@@ -32,14 +32,14 @@ http {
 
     server {
         listen 443 ssl http2;
-        server_name jolsho.com www.jolsho.com;
+        server_name testohsal.com www.testohsal.com;
 
         location / {
             # Apply the rate limit
             limit_req zone=one burst=15 nodelay;
             limit_req_status 429;  # Too Many Requests if limit exceeded
 
-            proxy_pass http://jolsho:8080;
+            proxy_pass http://ohsal:8080;
             proxy_http_version 1.1;
 
             proxy_set_header Upgrade $http_upgrade;
