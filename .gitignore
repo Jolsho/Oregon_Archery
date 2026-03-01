@@ -1,2 +1,3 @@
 KEYS.txt
 *.log
+proxy/certbot/conf

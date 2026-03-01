@@ -75,7 +75,7 @@ func New_Networker() *Networker {
 }
 
 func (net *Networker) Shutdown() {
-	err := utils.SavePrivateKey("KEYS.txt", net.PrivKey)
+	err := utils.SavePrivateKey("/var/ohsal/KEYS.txt", net.PrivKey)
 	if err != nil { 
 		log.Fatal("STATE_PERSIST::SAVE_KEY::",err.Error()) 
 	}

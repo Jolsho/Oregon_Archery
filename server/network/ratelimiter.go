@@ -11,8 +11,8 @@ import (
 	"golang.org/x/time/rate"
 )
 
-const IP_RATE = 5;
-const IP_BURST = 10;
+const IP_RATE = 10;
+const IP_BURST = 20;
 const LAST_USED_THRESHOLD = 10 * time.Minute;
 const RATE_EXCEEDED_TIMEOUT = 30 * time.Second;
 

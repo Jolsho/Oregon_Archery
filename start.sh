@@ -32,7 +32,7 @@ start_proxy_prod() {
 
     ############## NGINX ################
     if ! docker ps | grep -q "nginx"; then
-        docker run -itd --rm \
+        docker run -itd \
             --name nginx \
             --network "$NETWORK_NAME" \
             -p 80:80 -p 443:443 \
@@ -69,7 +69,6 @@ start_proxy_first_time() {
             -v "$CERTBOT_CONF:/etc/letsencrypt" \
             -v "$CERTBOT_WWW:/var/www/certbot" \
             -v "$NGINX_LOGS:/var/log/nginx" \
-            --restart unless-stopped \
             nginx:latest
 
         ############## CERTBOT ################
@@ -88,6 +87,7 @@ start_proxy_first_time() {
 stop_proxy() {
 
     docker stop nginx
+    docker rm nginx
 
     if crontab -l 2>/dev/null | grep -Fq "$RENEW_CRON_TAG"; then
         crontab -l 2>/dev/null | grep -Fv "$RENEW_CRON_TAG" | crontab -
@@ -104,14 +104,16 @@ start_ohsal() {
     if docker ps -a | grep -Fq ohsal; then
         docker start ohsal
     else
-        docker run --name ohsal --network "$NETWORK_NAME" ohsal.com:latest
+        docker run -d \
+            --name ohsal --network "$NETWORK_NAME" \
+            -v "$BASE_DIR/server_data:/var/ohsal" \
+            ohsal.com:latest
     fi
 }
 
 stop_ohsal() {
-    if docker ps | grep -Fq ohsal; then
-        docker stop ohsal
-    fi
+    docker stop ohsal
+    docker rm ohsal
 }
 
 
@@ -121,12 +123,12 @@ stop_ohsal() {
 if [[ "$mode" == "run" ]]; then
     create_network
     start_proxy_first_time
-    #start_proxy_prod
-    #start_ohsal
+    start_proxy_prod
+    start_ohsal
 
 elif [[ "$mode" == "stop" ]]; then
-    stop_proxy
     stop_ohsal
+    stop_proxy
 else
     echo "Unknown Mode"
 fi

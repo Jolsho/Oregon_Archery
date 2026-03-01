@@ -17,7 +17,7 @@ func ws_error_handler(
 };
 
 var allowedOrigins = map[string]struct{}{
-	"http://localhost:8080":     {},
+	"http://ohsal:80":     {},
 }
 func check_origin(r *http.Request) bool {
     origin := r.Header.Get("Origin")
