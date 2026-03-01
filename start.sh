@@ -22,46 +22,69 @@ create_network() {
 
 
 RENEW_CRON_TAG="# ssl_renew"
+CERTBOT_CONF="$BASE_DIR/proxy/certbot/conf"
+CERTBOT_WWW="$BASE_DIR/proxy/certbot/www"
 
-start_proxy() {
+NGINX_LOGS="$BASE_DIR/proxy/nginx/logs"
 
-    CERTBOT_CONF="$BASE_DIR/certbot/conf"
-    CERTBOT_WWW="$BASE_DIR/certbot/www"
+start_proxy_prod() {
 
 
     ############## NGINX ################
-    if ! docker ps -a | grep -q "nginx"; then
-        docker run -d \
+    if ! docker ps | grep -q "nginx"; then
+        docker run -itd --rm \
             --name nginx \
             --network "$NETWORK_NAME" \
             -p 80:80 -p 443:443 \
-            -v "$BASE_DIR/nginx/conf.d:/etc/nginx/conf.d" \
+            -v "$BASE_DIR/proxy/nginx/prod:/etc/nginx/conf.d:ro" \
             -v "$CERTBOT_CONF:/etc/letsencrypt" \
             -v "$CERTBOT_WWW:/var/www/certbot" \
+            -v "$NGINX_LOGS:/var/log/nginx" \
             --restart unless-stopped \
             nginx:latest
     fi
 
 
-    ############## CERTBOT ################
-    domains=(testohsal.com)
-
-    docker run --rm \
-        -v "$CERTBOT_CONF:/etc/letsencrypt" \
-        -v "$CERTBOT_WWW:/var/www/certbot" \
-        certbot/certbot certonly --webroot -w /var/www/certbot \
-        "${domains[@]/#/-d }"
-
+   
     ############## CERTBOT CRON JOB ################
-
+   
     CRON_SCHEDULE="0 */12 * * *"
-    CRON_CMD="$BASE_DIR/proxy/renew_ssl.sh >> $BASE_DIR/proxy/cron.log 2>&1"
+    CRON_CMD="$BASE_DIR/renew_ssl.sh >> $BASE_DIR/proxy/cron.log 2>&1"
     CRON_LINE="$CRON_SCHEDULE $CRON_CMD $RENEW_CRON_TAG"
-
+    
     if ! crontab -l 2>/dev/null | grep -Fq "$RENEW_CRON_TAG"; then
         (crontab -l 2>/dev/null; echo "$CRON_LINE") | crontab -
     fi
 }
+
+start_proxy_first_time() {
+
+    if [[ ! -d "$CERTBOT_CONF/accounts" ]]; then
+        ############## NGINX ################
+        docker run -itd --rm \
+            --name nginx \
+            --network "$NETWORK_NAME" \
+            -p 80:80 \
+            -v "$BASE_DIR/proxy/nginx/temp:/etc/nginx/conf.d:ro" \
+            -v "$CERTBOT_CONF:/etc/letsencrypt" \
+            -v "$CERTBOT_WWW:/var/www/certbot" \
+            -v "$NGINX_LOGS:/var/log/nginx" \
+            --restart unless-stopped \
+            nginx:latest
+
+        ############## CERTBOT ################
+        docker run --rm \
+            -v "$CERTBOT_CONF:/etc/letsencrypt" \
+            -v "$CERTBOT_WWW:/var/www/certbot" \
+            certbot/certbot certonly --webroot -w /var/www/certbot \
+            --non-interactive --agree-tos \
+            --email joshua.olson1@yahoo.com \
+            -d www.testohsal.com \
+            -d testohsal.com
+
+    fi
+}
+
 stop_proxy() {
 
     docker stop nginx
@@ -96,13 +119,14 @@ stop_ohsal() {
 #############   MAIN    ##########################
 ##################################################
 if [[ "$mode" == "run" ]]; then
-    create_network();
-    start_proxy();
-    start_ohsal();
+    create_network
+    start_proxy_first_time
+    #start_proxy_prod
+    #start_ohsal
 
 elif [[ "$mode" == "stop" ]]; then
-    stop_proxy();
-    stop_ohsal();
+    stop_proxy
+    stop_ohsal
 else
     echo "Unknown Mode"
 fi

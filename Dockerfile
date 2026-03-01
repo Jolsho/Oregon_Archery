@@ -23,5 +23,4 @@ COPY --from=builder /app/server/server ./
 COPY ui/ /app/ui
 
 ENV DST_DIR=/app/ui
-EXPOSE 8080
 CMD ["/app/server/server"]
