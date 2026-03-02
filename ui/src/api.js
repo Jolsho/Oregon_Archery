@@ -100,7 +100,10 @@ export async function run_websocket(state) {
  *  @returns {Promise<Event[]>}
  */
 export async function get_events() {
-    let res = await fetch("/events");
+    let res = await fetch("/events", {
+        method: "GET",
+        credentials: "include",
+    });
     if (!res.ok) {
         console.error(res.error);
         throw res.error;
@@ -118,9 +121,10 @@ export async function post_event(event) {
 
   try {
     const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(event),
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(event),
+        credentials: "include",
     });
 
     if (!res.ok) {
@@ -143,7 +147,7 @@ export async function post_event(event) {
  *  @returns {Promise<void>}
  */
 export async function delete_event(title) {
-    let res = await fetch(`/events?title=${title}`, { method: "DELETE" });
+    let res = await fetch(`/events?title=${title}`, { method: "DELETE", credentials: "include" });
     if (!res.ok) {
         const text = await res.text();
         throw new Error(`DELETE /events failed (${res.status}): ${text}`);
