@@ -14,6 +14,10 @@ mkdir -p "$CERTBOT_WWW"
 NGINX_SRC="$BASE_DIR/nginx"
 NGINX_LOGS="$MOUNT/nginx/logs"
 mkdir -p "$NGINX_LOGS"
+if [[ ! -e "$NGINX_LOGS/access.log" ]]; then 
+    touch  "$NGINX_LOGS/access.log"
+    touch  "$NGINX_LOGS/error.log"
+fi
 
 OHSAL="$MOUNT/ohsal"
 mkdir -p "$OHSAL/logs"
