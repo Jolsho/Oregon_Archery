@@ -633,21 +633,17 @@ function submit_event(state, parent, title) {
     }
 }
 
-function delete_current_event() {
-    let current = document.getElementById("current_event_page");
-    !!current && current.remove();
-}
-
 /**
  * @param {State} state
  * @param {Boolean} is_maluable
  */
 export function render_event(state, is_maluable = false) {
 
+    let current = document.getElementById("current_event_page");
+    !!current && current.remove();
+
     let event = state.get_event();
     if (!event) return;
-
-    delete_current_event();
 
     const is_new = !event.title;
 
