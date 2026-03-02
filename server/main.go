@@ -64,27 +64,31 @@ func main() {
 	if !ok { dst = "../ui/"; }
 
 	mux := http.NewServeMux();
-	mux.Handle("/", http.FileServer(http.Dir(dst)));
-	mux.HandleFunc("/events", func (w http.ResponseWriter, r *http.Request) {
-		handlers.Handle_events(net, state, w, r);
-	})
-	mux.HandleFunc("/ws", func (w http.ResponseWriter, r *http.Request) {
-		handlers.Handle_WS(net, state, w, r);
+	// FileServer - no middleware
+	mux.Handle("/", http.FileServer(http.Dir(dst)))
+
+	// Events handler - wrapped in middleware
+	mux.HandleFunc("/events", func(w http.ResponseWriter, r *http.Request) {
+		if cookie := network.Secure_Middleware(net, w, r); cookie == nil {
+			return
+		}
+		handlers.Handle_events(net, state, w, r)
 	})
 
-
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if cookie := network.Secure_Middleware(net, w, r); cookie == nil { return }
-		mux.ServeHTTP(w, r)
-	});
-;
+	// WebSocket handler - wrapped in middleware
+	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		if cookie := network.Secure_Middleware(net, w, r); cookie == nil {
+			return
+		}
+		handlers.Handle_WS(net, state, w, r)
+	})
 
 	//////////////////////////////////////////////
 
 
 	server := &http.Server{
 		Addr: "0.0.0.0:80",
-		Handler: handler,
+		Handler: mux,
 		TLSConfig: GenerateTLSConfig(),
 	};
 
