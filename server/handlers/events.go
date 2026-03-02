@@ -128,13 +128,20 @@ func Handle_events(net *network.Networker, state *state_p.State, w http.Response
 			state.Events = append(state.Events, event);
 		}
 
-		type NewEventMsg struct {
-			Msg string `json:"msg"`
+		newEvent := struct {
 			Event state_p.Event `json:"event"`
+		}{Event: event};
+		payload, err := json.Marshal(&newEvent);
+		if err != nil {
+			log := fmt.Sprintf("WS MARSHAL NEW EVENT:: %s", err.Error());
+			net.Logger.Log(network.WARNING_LEVEL, log);
+			http.Error(w, "EVENT MARSHAL FAILED", http.StatusInternalServerError);
+			return;
 		}
-		ws_msg := NewEventMsg{
+
+		ws_msg := network.WsMsg{
 			Msg: "new_event",
-			Event: event,
+			Payload: payload,
 		};
 		for conn_nonce, conn := range net.Conns {
 			if conn_nonce != nonce {
@@ -179,13 +186,23 @@ func Handle_events(net *network.Networker, state *state_p.State, w http.Response
 			return;
 		}
 
-		type DeleteEventMsg struct {
-			Msg string `json:"msg"`
-			Title string `json:"title"`
+		payload_bytes, err := json.Marshal(
+			struct {
+				Title string `json:"title"`
+			}{
+				Title: title,
+			},
+		);
+		if err != nil {
+			log := fmt.Sprintf("WS MARSHAL DELETE EVENT :: %s", err.Error());
+			net.Logger.Log(network.WARNING_LEVEL, log);
+			http.Error(w, "EVENT MARSHAL FAILED", http.StatusInternalServerError);
+			return;
 		}
-		ws_msg := DeleteEventMsg{
+
+		ws_msg := network.WsMsg{
 			Msg: "delete_event",
-			Title: title,
+			Payload: payload_bytes,
 		};
 		for conn_nonce, conn := range net.Conns {
 			if conn_nonce != nonce {
