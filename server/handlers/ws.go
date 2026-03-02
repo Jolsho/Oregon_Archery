@@ -116,7 +116,7 @@ func Handle_WS(
 	net.Logger.Log(network.INFO_LEVEL, log)
 
 	go readLoop(state, net, bigConn)
-	go writeLoop(net, bigConn)
+	writeLoop(net, bigConn)
 }
 
 const (
@@ -139,6 +139,8 @@ func readLoop(state *st.State, net *network.Networker, conn *network.WSConn) {
 	for {
 		select {
 		case <-conn.Ctx.Done():
+			log := fmt.Sprintf("CLOSED WRITE %s", conn.Ip);
+			net.Logger.Log(network.INFO_LEVEL, log)
 			return;
 
 		default:
@@ -183,19 +185,19 @@ func writeLoop(net *network.Networker, conn *network.WSConn) {
 	}()
 
 	for {
-		conn.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 		select {
 		case <- conn.Ctx.Done():
+			log := fmt.Sprintf("CLOSED WRITE %s", conn.Ip);
+			net.Logger.Log(network.INFO_LEVEL, log)
 			return
 		case msg, ok := <-conn.Out:
+			conn.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			if !ok {
 				err := conn.Conn.WriteMessage(websocket.CloseMessage, []byte{}); 
 				if err != nil {
 					log := fmt.Sprintf("WS WRITE_MSG_ERR for %s :: %s", conn.Ip, err.Error());
 					net.Logger.Log(network.INFO_LEVEL, log)
 				}
-				log := fmt.Sprintf("NOT OK WS CLOSED %s", conn.Ip);
-				net.Logger.Log(network.INFO_LEVEL, log)
 				return;
 			}
 			err := conn.Conn.WriteJSON(msg); 
