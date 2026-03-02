@@ -55,7 +55,7 @@ func Secure_Middleware(net *Networker, w http.ResponseWriter, r *http.Request) *
 			Value:    value,
 			Path:     "/",                 	// cookie is valid for all paths
 			HttpOnly: true,                	// inaccessible to JS (prevents XSS)
-			Secure:   true,               	// true in HTTPS
+			Secure:   false,               	// true in HTTPS
 			Expires:  expire, 			   	// expiration
 			SameSite: http.SameSiteLaxMode,
 		}
