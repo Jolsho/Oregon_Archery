@@ -4,6 +4,21 @@ set -euo pipefail
 mode=${1:-run}
 BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
 
+MOUNT="$BASE_DIR/mnt"
+
+CERTBOT_CONF="$MOUNT/certbot/conf"
+CERTBOT_WWW="$MOUNT/certbot/www"
+mkdir -p "$CERTBOT_CONF"
+mkdir -p "$CERTBOT_WWW"
+
+NGINX_SRC="$BASE_DIR/nginx"
+NGINX_LOGS="$MOUNT/nginx/logs"
+mkdir -p "$NGINX_LOGS"
+
+OHSAL="$MOUNT/ohsal"
+mkdir -p "$OHSAL/logs"
+mkdir -p "$OHSAL/data"
+
 ##################################################
 #############   DOCKER    ########################
 ##################################################
@@ -22,10 +37,6 @@ create_network() {
 
 
 RENEW_CRON_TAG="# ssl_renew"
-CERTBOT_CONF="$BASE_DIR/proxy/certbot/conf"
-CERTBOT_WWW="$BASE_DIR/proxy/certbot/www"
-
-NGINX_LOGS="$BASE_DIR/proxy/nginx/logs"
 
 start_proxy_prod() {
 
@@ -36,7 +47,7 @@ start_proxy_prod() {
             --name nginx \
             --network "$NETWORK_NAME" \
             -p 80:80 -p 443:443 \
-            -v "$BASE_DIR/proxy/nginx/prod:/etc/nginx/conf.d:ro" \
+            -v "$NGINX_SRC/prod:/etc/nginx/conf.d:ro" \
             -v "$CERTBOT_CONF:/etc/letsencrypt" \
             -v "$CERTBOT_WWW:/var/www/certbot" \
             -v "$NGINX_LOGS:/var/log/nginx" \
@@ -65,7 +76,7 @@ start_proxy_first_time() {
             --name nginx \
             --network "$NETWORK_NAME" \
             -p 80:80 \
-            -v "$BASE_DIR/proxy/nginx/temp:/etc/nginx/conf.d:ro" \
+            -v "$NGINX_SRC/temp:/etc/nginx/conf.d:ro" \
             -v "$CERTBOT_CONF:/etc/letsencrypt" \
             -v "$CERTBOT_WWW:/var/www/certbot" \
             -v "$NGINX_LOGS:/var/log/nginx" \
@@ -106,7 +117,7 @@ start_ohsal() {
     else
         docker run -d \
             --name ohsal --network "$NETWORK_NAME" \
-            -v "$BASE_DIR/server_data:/var/ohsal" \
+            -v "$OHSAL:/var/ohsal" \
             ohsal.com:latest
     fi
 }
@@ -116,11 +127,29 @@ stop_ohsal() {
     docker rm ohsal
 }
 
+##################################################
+#############   FAIL2BAN    ######################
+##################################################
+set_fail_to_ban() {
+    local action_file="/etc/fail2ban/action.d/iptables-docker.conf"
+    cat "$NGINX_SRC/fail2ban/iptables-docker.conf" > "$action_file" 
+
+    local filter_file="/etc/fail2ban/filter.d/nginx-scan.conf"
+    cat "$NGINX_SRC/fail2ban/nginx-scan.conf" > "$filter_file" 
+
+    local jail_file="/etc/fail2ban/jail.d/nginx-scan.local"
+    sed "s|NGINX_LOGS|$NGINX_LOGS|g" /$NGINX_SRC/fail2ban/nginx-scan.local > "$jail_file"
+    chmod 644 "$jail_file"
+
+    systemctl reload fail2ban
+}
+
 
 ##################################################
 #############   MAIN    ##########################
 ##################################################
 if [[ "$mode" == "run" ]]; then
+    set_fail_to_ban
     create_network
     start_proxy_first_time
     start_proxy_prod

@@ -72,7 +72,7 @@ func (logger *Logger) start_writer(group *utils.WorkGroup) {
 	}
 }
 
-const LOG_FILE = "/var/ohsal/ohsal.log"
+const LOG_FILE = "/var/ohsal/logs/ohsal.log"
 func New_logger() *Logger {
 	file, err := os.OpenFile(LOG_FILE, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644);
 	if err != nil { panic(err.Error()); }

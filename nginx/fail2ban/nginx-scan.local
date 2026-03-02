@@ -1,0 +1,9 @@
+[nginx-scan]
+enabled  = true
+filter   = nginx-scan
+logpath  = NGINX_LOGS/access.log
+findtime = 60
+maxretry = 3 
+bantime  = 30m
+backend  = polling
+action    = iptables-docker

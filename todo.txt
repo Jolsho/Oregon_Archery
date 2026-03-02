@@ -1,11 +1,3 @@
-FRIDAY::
-
-    TASK_9 :: 
-        GET A DOMAIN NAME, SETUP DNS, and CERTBOT
-        FIREWALL??
-        RUN SERVER
-
-
 SATURDAY::
 
     TASK_3 :: server/internals/dumb_data.go

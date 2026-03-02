@@ -41,7 +41,7 @@ type Networker struct {
 }
 
 func New_Networker() *Networker {
-	priv, err := utils.LoadPrivateKey("KEYS.txt");
+	priv, err := utils.LoadPrivateKey("/var/ohsal/KEYS.txt");
 	if err != nil { 
 		panic("CANT LOAD PRIVATE KEY"); 
 	}
