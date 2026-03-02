@@ -1,5 +1,5 @@
 import { Event, render_event } from "./event.js";
-import { update_connection_status } from "./menu.js";
+import { update_connection_status, render_menu } from "./menu.js";
 import { State } from "./state.js";
 
 /**
