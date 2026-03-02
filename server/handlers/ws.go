@@ -113,13 +113,13 @@ func Handle_WS(
 	net.ConnsMux.Unlock();
 
 	go readLoop(state, net, bigConn)
-	writeLoop(net, bigConn)
+	go writeLoop(net, bigConn)
 }
 
 const (
 	readWait  = 60 * time.Second  // how long we wait for the next message/pong
-	pongWait  = 60 * time.Second
-	pingEvery = 50 * time.Second  // must be < pongWait
+	pongWait  = 30 * time.Second
+	pingEvery = 20 * time.Second  // must be < pongWait
 )
 
 func readLoop(state *st.State, net *network.Networker, conn *network.WSConn) {
@@ -146,9 +146,12 @@ func readLoop(state *st.State, net *network.Networker, conn *network.WSConn) {
 					websocket.CloseGoingAway,
 					websocket.CloseAbnormalClosure,
 				) {
-					log := fmt.Sprintf("WS READ_JSON for %s :: %s", conn.Ip, err.Error());
+					log := fmt.Sprintf("WS CLOSE ERR for %s :: %s", conn.Ip, err.Error());
 					net.Logger.Log(network.INFO_LEVEL, log)
 					conn.Cancel();
+				} else {
+					log := fmt.Sprintf("WS READ_JSON for %s :: %s", conn.Ip, err.Error());
+					net.Logger.Log(network.INFO_LEVEL, log)
 				}
 				return
 			}
@@ -162,6 +165,11 @@ func writeLoop(net *network.Networker, conn *network.WSConn) {
 	ticker := time.NewTicker(pingEvery)
 	defer func() {
 		ticker.Stop();
+		conn.Conn.WriteControl(
+		  websocket.CloseMessage,
+		  websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""),
+		  time.Now().Add(time.Second),
+		)
 		conn.Conn.Close();
 
 		net.ConnsMux.Lock()
@@ -172,6 +180,7 @@ func writeLoop(net *network.Networker, conn *network.WSConn) {
 	}()
 
 	for {
+		conn.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 		select {
 		case <- conn.Ctx.Done():
 			return
