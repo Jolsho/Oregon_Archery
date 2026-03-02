@@ -18,6 +18,9 @@ mkdir -p "$NGINX_LOGS"
 OHSAL="$MOUNT/ohsal"
 mkdir -p "$OHSAL/logs"
 mkdir -p "$OHSAL/data"
+if [[ ! -e "$OHSAL/logs/ohsal.log" ]]; then 
+    touch  "$OHSAL/logs/ohsal.log"
+fi
 
 ##################################################
 #############   DOCKER    ########################
