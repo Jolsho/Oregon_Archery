@@ -13,7 +13,7 @@ import (
 
 const IP_RATE = 10;
 const IP_BURST = 20;
-const LAST_USED_THRESHOLD = 10 * time.Minute;
+const LAST_USED_THRESHOLD = 1 * time.Minute;
 const RATE_EXCEEDED_TIMEOUT = 30 * time.Second;
 
 type Rates struct {
@@ -155,5 +155,5 @@ func (limiter *RateLimiter) start_cleaner(
 	);
 	// SCHEDULER
 	go utils.Task_Scheduler(&tasks, taskMux, CLEANING_INTERVAL, needsCleaning, group)
-	utils.RunCleaner(needsCleaning, taskMux, tasks, group);
+	utils.RunCleaner(needsCleaning, taskMux, &tasks, group);
 }

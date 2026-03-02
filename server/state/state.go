@@ -32,7 +32,7 @@ func New_State() *State {
 		},
 	)
 	go utils.Task_Scheduler(&tasks, taskMux, CLEANING_INTERVAL, needsCleaning, state.workers)
-	go utils.RunCleaner(needsCleaning, taskMux, tasks, state.workers)
+	go utils.RunCleaner(needsCleaning, taskMux, &tasks, state.workers)
 
 	return &state
 }

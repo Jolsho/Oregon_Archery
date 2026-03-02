@@ -77,7 +77,7 @@ type CleaningTask interface {
 func RunCleaner(
 	needsCleaning <- chan struct{}, 
 	taskMux *sync.Mutex, 
-	tasks []CleaningTask,
+	tasks *[]CleaningTask,
 	group *WorkGroup,
 ) {
 	group.WG.Add(1);
@@ -87,9 +87,9 @@ func RunCleaner(
 			taskMux.Lock()
 
 			// pop earliest
-			task := tasks[0]
-			copy(tasks, tasks[1:])
-			tasks = tasks[:len(tasks)-1]
+			task := (*tasks)[0]
+			copy((*tasks), (*tasks)[1:])
+			(*tasks) = (*tasks)[:len(*tasks)-1]
 
 			// update schedule
 			task.Clean()
@@ -97,13 +97,13 @@ func RunCleaner(
 			// reinsert sorted by When
 			i := 0
 			when := task.Get_when();
-			for i < len(tasks) && tasks[i].Get_when().Before(when) {
+			for i < len(*tasks) && (*tasks)[i].Get_when().Before(when) {
 				i++
 			}
 
-			tasks = append(tasks, nil) // grow
-			copy(tasks[i+1:], tasks[i:])
-			tasks[i] = task
+			*tasks = append(*tasks, nil) // grow
+			copy((*tasks)[i+1:], (*tasks)[i:])
+			(*tasks)[i] = task
 
 			taskMux.Unlock()
 
