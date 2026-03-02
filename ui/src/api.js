@@ -18,7 +18,7 @@ export async function run_websocket(state) {
         const msg = "new_event";
         for (const event of state.events) {
             if (!event.is_persisted && event.is_own) {
-                ws.send(JSON.stringify({msg, payload: event}));
+                ws.send(JSON.stringify({msg, payload: {event}}));
                 event.is_persisted = true;
                 console.log("SENT", event.title);
             }
@@ -33,7 +33,7 @@ export async function run_websocket(state) {
         switch (data.msg) {
             case "new_event": {
                 let idx = state.find_event_idx(data.payload.event.title);
-                if (idx > 0) {
+                if (idx >= 0) {
                     // we already processed our own via http.
                     if (state.get_event(idx).is_own) return;
 

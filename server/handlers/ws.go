@@ -112,6 +112,9 @@ func Handle_WS(
 	net.Conns[bigConn.Nonce] = bigConn;
 	net.ConnsMux.Unlock();
 
+	log := fmt.Sprintf("NEW WS CONN from %s", bigConn.Ip);
+	net.Logger.Log(network.INFO_LEVEL, log)
+
 	go readLoop(state, net, bigConn)
 	go writeLoop(net, bigConn)
 }
