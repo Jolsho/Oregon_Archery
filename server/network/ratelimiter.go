@@ -108,14 +108,15 @@ func (limiter *RateLimiter) Handle_rates(ip string) (time.Duration, error, int) 
 ///////////////////////////////////////////
 
 
-const CLEANING_INTERVAL = 24 * time.Hour;
-const RETRY_CLEAN_TIMEOUT = 1 * time.Hour;
+const CLEANING_INTERVAL = 60 * time.Second;
+const RETRY_CLEAN_TIMEOUT = 30 * time.Second;
 
 
 type CleaningTask struct {
 	Mapping *map[string]*Rates
 	Mux		*sync.RWMutex
 	When	time.Time
+	Logger 	*Logger
 }
 
 func (task *CleaningTask) Get_when() time.Time { 
@@ -125,24 +126,31 @@ func (task *CleaningTask) Get_when() time.Time {
 
 func (task *CleaningTask) Clean() {
 	task.Mux.Lock()
+	i := 0
 	for key, rate := range *task.Mapping {
 		if rate.Status == http.StatusOK && 
 		time.Since(rate.LastSeen) > LAST_USED_THRESHOLD {
+			i++;
 			delete(*task.Mapping, key)
 		}
 	}
 	task.Mux.Unlock()
 	task.When = time.Now().Add(CLEANING_INTERVAL)
+
+	log := fmt.Sprintf("CLEANED %d IPs :: %d REMAINING", i, len(*task.Mapping));
+	task.Logger.Log(INFO_LEVEL, log);
 }
 
 func (limiter *RateLimiter) start_cleaner(
 	group *utils.WorkGroup,
+	logger *Logger,
 ) {
 	tasks, taskMux, needsCleaning := utils.NewCleaningTasks(
 		&CleaningTask{
 			Mapping: &limiter.IpRates, 
 			Mux: limiter.IpRatesMux, 
 			When: time.Now().Add(CLEANING_INTERVAL),
+			Logger: logger,
 		},
 	);
 	// SCHEDULER

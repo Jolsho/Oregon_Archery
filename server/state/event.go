@@ -70,7 +70,7 @@ func (ev *Event) Sanitize() error {
 	return nil
 }
 
-const CLEANING_INTERVAL = 24 * time.Hour
+const CLEANING_INTERVAL = 10 * time.Minute
 
 type EventCleaningTask struct {
 	Array *[]Event

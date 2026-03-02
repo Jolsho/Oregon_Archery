@@ -10,6 +10,8 @@ type State struct {
 	Events       []Event
 	EventMux     *sync.RWMutex
 	workers		 *utils.WorkGroup
+
+	EventPerUser map[string]int
 }
 
 func New_State() *State {
@@ -18,6 +20,7 @@ func New_State() *State {
 		Events:       Events,
 		EventMux:     &sync.RWMutex{},
 		workers: 	  utils.NewWorkGroup(),
+		EventPerUser: make(map[string]int, 32),
 	}
 
 	// EVENT CLEANER
@@ -40,6 +43,21 @@ func (state *State) Event_exists(title string) *Event {
 		}
 	}
 	return nil
+}
+
+
+const MAX_EVENTS_PER_USER = 3;
+func (state *State) TooManyEvents(ip string) bool {
+	if count, exists := state.EventPerUser[ip]; exists {
+		if count == MAX_EVENTS_PER_USER {
+			return true;
+		} else {
+			state.EventPerUser[ip]++;
+		}
+	} else {
+		state.EventPerUser[ip] = 1;
+	}
+	return false;
 }
 
 func (state *State) Shutdown() {

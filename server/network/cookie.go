@@ -93,6 +93,7 @@ func verify_cookie(net *Networker, cookie *http.Cookie, w http.ResponseWriter) e
 		http.Error(w, "DECODE COOKIE EXPIRE", http.StatusInternalServerError);
 		return err;
 	}
+
 	var expire time.Time
 	err = expire.UnmarshalBinary(expire_bytes)
 	if err != nil {
@@ -108,6 +109,7 @@ func verify_cookie(net *Networker, cookie *http.Cookie, w http.ResponseWriter) e
 		http.Error(w, "DECODE SIGNATURE", http.StatusUnauthorized)
 		return err;
 	}
+
 	if !ecdsa.VerifyASN1(net.PubKey, hash, signature) {
 		http.Error(w, "INVALID COOKIE", http.StatusUnauthorized);
 		return err;

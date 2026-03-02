@@ -12,15 +12,19 @@ const INFRACTION_RATE_LIMIT_EXCEEDED = 1;
 const INFRACTION_INVALID_COOKIE = 2;
 const INFRACTION_MALFORMED_DATA = 3;
 const INFRACTION_ATTEMPTED_ACCESS = 4;
+const INFRACTION_TOO_MANY_EVENTS = 5;
 
 func bad_behaviour_score(infraction int) int {
 	switch infraction {
 	case INFRACTION_RATE_LIMIT_EXCEEDED: return 30;
 	case INFRACTION_ATTEMPTED_ACCESS: return 30;
 
+	case INFRACTION_TOO_MANY_EVENTS: return 15;
+
 	case INFRACTION_INVALID_COOKIE: return 10;
 
 	case INFRACTION_MALFORMED_DATA: return 5;
+
 	}
 	return 0;
 }

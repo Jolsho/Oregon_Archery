@@ -55,7 +55,7 @@ func New_Networker() *Networker {
 
 	// RATE LIMITER
 	limiter := New_Rate_Limiter();
-	go limiter.start_cleaner(workers)
+	go limiter.start_cleaner(workers, logger)
 	logger.Log(DEBUG_LEVEL, "LIMITER STARTED CLEANING");
 
 

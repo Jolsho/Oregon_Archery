@@ -61,6 +61,9 @@ func Secure_Middleware(net *Networker, w http.ResponseWriter, r *http.Request) *
 		}
 
 		http.SetCookie(w, cookie);
+
+		log := fmt.Sprintf("NEW COOKIE for %s :: TOTAL %d", ip, len(net.RateLimiter.IpRates));
+		net.Logger.Log(INFO_LEVEL, log);
 	}
 
 	if err = verify_cookie(net, cookie, w); err != nil { 

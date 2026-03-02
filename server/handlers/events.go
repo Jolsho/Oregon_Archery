@@ -52,6 +52,7 @@ func Handle_events(net *network.Networker, state *state_p.State, w http.Response
 		state.EventMux.Lock();
 		defer state.EventMux.Unlock();
 
+
 		existing := state.Event_exists(event.Title);
 		if existing != nil {
 			if existing.Secret != nonce {
@@ -90,6 +91,15 @@ func Handle_events(net *network.Networker, state *state_p.State, w http.Response
 			w.Write(bytes);
 
 		} else {
+			if state.TooManyEvents(ip) {
+				log := fmt.Sprintf("CREATED TOO MANY EVENTS %s", ip);
+				net.Logger.Log(network.INFO_LEVEL, log)
+
+				net.Bad_Behaviour(network.INFRACTION_TOO_MANY_EVENTS, ip);
+
+				http.Error(w, "TOO MANY EVENTS", http.StatusUnauthorized);
+				return
+			}
 
 			event.Secret = nonce;
 			event.IsOwn = true;
@@ -155,6 +165,9 @@ func Handle_events(net *network.Networker, state *state_p.State, w http.Response
 				http.Error(w, "INVALID SECRET", http.StatusUnauthorized);
 				return;
 			}
+
+			state.EventPerUser[ip]--;
+
 			state.Events = slices.DeleteFunc(state.Events, func(ev state_p.Event) bool {
 				return ev.Secret == nonce && ev.Title == title;
 			}); 
