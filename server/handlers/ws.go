@@ -194,7 +194,9 @@ func writeLoop(net *network.Networker, conn *network.WSConn) {
 					log := fmt.Sprintf("WS WRITE_MSG_ERR for %s :: %s", conn.Ip, err.Error());
 					net.Logger.Log(network.INFO_LEVEL, log)
 				}
-				return
+				log := fmt.Sprintf("NOT OK WS CLOSED %s", conn.Ip);
+				net.Logger.Log(network.INFO_LEVEL, log)
+				return;
 			}
 			err := conn.Conn.WriteJSON(msg); 
 			if err != nil {
