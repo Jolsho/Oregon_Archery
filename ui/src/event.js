@@ -51,7 +51,7 @@ const DIVISIONS = [
 	{ name: "OPEN", 		threshold: 280, }, 
 	{ name: "MODERN", 		threshold: 265, }, 
 	{ name: "OLYMPIC", 		threshold: 260, }, // TASK_3
-	{ name: "TRADITIONAL", 	threshold: 185, }, 
+	{ name: "BAREBOW", 	    threshold: 185, }, 
 ];
 
 export class Event {
@@ -187,6 +187,109 @@ function submit_team(state, team) {
     state.set_event(event);
     render_menu(state);
     render_event(state);
+}
+
+/**
+ * @param {HTMLElement} title_container
+ * @param {State} state
+ */
+function render_event_edit_panel(title_container, state) {
+    let event = state.get_event();
+
+    let edit_event_panel = create_elem(
+        "div", title_container, "edit_event_panel",
+    );
+    let kind_container = create_elem("div", edit_event_panel, "kind_container");
+    const KINDS = ["OUTDOOR", "INDOOR"];
+    let scoresPerTeamLabel = null;
+    let division_labels = [];
+
+    function renderKindExtras(kind) {
+        // Clear previous UI
+        if (scoresPerTeamLabel) {
+            scoresPerTeamLabel.remove();
+            scoresPerTeamLabel = null;
+        }
+
+        if (!!division_labels) {
+            division_labels.forEach(label => {
+                label.remove();
+            });
+            division_labels = [];
+        }
+
+        if (kind === "OUTDOOR") {
+            scoresPerTeamLabel = create_elem(
+                "label", edit_event_panel, "roboto-mono-norm"
+            );
+            scoresPerTeamLabel.textContent = "Scores Per Team";
+
+            let scoresPerTeamInput = create_elem(
+                "input", scoresPerTeamLabel, "roboto-mono-norm", "scores_per_team"
+            );
+            scoresPerTeamInput.type = "number";
+            scoresPerTeamInput.value = event.scores_per_team;
+
+            scoresPerTeamInput.addEventListener("input", (e) => {
+                event.scores_per_team = Number(e.target.value);
+            });
+
+            scoresPerTeamInput.addEventListener("keydown", (e) => {
+                if (e.key == "Enter") {
+                    submit_event(state, title_container, title);
+                }
+            });
+        } else if (kind === "INDOOR") {
+            event.divisions.forEach((div, i) => {
+                let division_label = create_elem("label", edit_event_panel, 
+                    "roboto-mono-norm", "right_label"
+                );
+                division_label.textContent = div.name;
+
+                let division_input = create_elem("input", division_label, 
+                    "roboto-mono-norm", "scores_per_team"
+                );
+                division_input.type = "number";
+                division_input.value = div.threshold;
+
+                division_input.addEventListener("input", (e) => {
+                    event.divisions[i].threshold = Number(e.target.value);
+                });
+
+                division_input.addEventListener("keydown", (e) => {
+                    if (e.key == "Enter") {
+                        submit_event(state, title_container, title);
+                    }
+                });
+
+                division_labels.push(division_label);
+            });
+
+        }
+    }
+
+    KINDS.forEach((kind, i) => {
+        const label = create_elem("label", kind_container, "roboto-mono-norm");
+        label.textContent = kind;
+
+        const input = create_elem("input", label);
+        input.type = "radio";
+        input.name = "event-kind";
+        input.value = kind;
+
+        if (event.kind === kind || (event.kind == "" && i == 0)) {
+            input.checked = true;
+            event.kind = kind;
+            renderKindExtras(kind);
+        }
+
+        input.addEventListener("change", (e) => {
+            if (!e.target.checked) return;
+
+            event.kind = e.target.value;
+            renderKindExtras(event.kind);
+        });
+    });
 }
 
 /**
@@ -483,6 +586,15 @@ function render_leaderboard(container, event) {
         let header = create_elem("h1", entry, "roboto-mono-norm");
         header.textContent = div.name;
 
+        if (event.kind == "INDOOR") {
+            let entry = create_elem("div", header, "varsity_container");
+
+            let title = create_elem("h2", entry, 
+                "roboto-mono-norm", "varsity_threshold"
+            );
+            title.textContent = "V:" + div.threshold;
+        }
+
         if (!!leaders) {
             leaders.forEach((leader, i) => {
                 let entry = create_elem("div", box, "leader");
@@ -709,69 +821,8 @@ export function render_event(state, is_maluable = false) {
         });
         requestAnimationFrame(() => title.focus());
 
-        let edit_event_panel = create_elem(
-            "div", title_container, "edit_event_panel",
-        );
-        let kind_container = create_elem("div", edit_event_panel, "kind_container");
-        const KINDS = ["OUTDOOR", "INDOOR"];
-        let scoresPerTeamLabel = null;
+        render_event_edit_panel(title_container, state);
 
-        function renderKindExtras(kind) {
-            // Clear previous UI
-            if (scoresPerTeamLabel) {
-                scoresPerTeamLabel.remove();
-                scoresPerTeamLabel = null;
-            }
-
-
-            if (kind === "OUTDOOR") {
-                scoresPerTeamLabel = create_elem(
-                    "label", edit_event_panel, "roboto-mono-norm"
-                );
-                scoresPerTeamLabel.textContent = "Scores Per Team";
-
-                let scoresPerTeamInput = create_elem(
-                    "input", scoresPerTeamLabel, "roboto-mono-norm", "scores_per_team"
-                );
-                scoresPerTeamInput.id = "OUTDOOR_SCORES_PER_TEAM";
-                scoresPerTeamInput.type = "number";
-                scoresPerTeamInput.value = event.scores_per_team;
-
-                scoresPerTeamInput.addEventListener("input", (e) => {
-                    event.scores_per_team = Number(e.target.value);
-                });
-
-                scoresPerTeamInput.addEventListener("keydown", (e) => {
-                    if (e.key == "Enter") {
-                        submit_event(state, title_container, title);
-                    }
-                });
-            } else if (kind === "INDOOR") {
-            }
-        }
-
-        KINDS.forEach((kind, i) => {
-            const label = create_elem("label", kind_container, "roboto-mono-norm");
-            label.textContent = kind;
-
-            const input = create_elem("input", label);
-            input.type = "radio";
-            input.name = "event-kind";
-            input.value = kind;
-
-            if (event.kind === kind || (event.kind == "" && i == 0)) {
-                input.checked = true;
-                event.kind = kind;
-                renderKindExtras(kind);
-            }
-
-            input.addEventListener("change", (e) => {
-                if (!e.target.checked) return;
-
-                event.kind = e.target.value;
-                renderKindExtras(event.kind);
-            });
-        });
     } else if (event.is_own) {
         title_container.insertBefore(document.createElement("div"), title);
 

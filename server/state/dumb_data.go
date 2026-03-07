@@ -12,7 +12,7 @@ var DIVISIONS = []Division{
 	{ Name: "OPEN", 		Threshold: 280, }, 
 	{ Name: "MODERN", 		Threshold: 265, }, 
 	{ Name: "OLYMPIC", 		Threshold: 270, },
-	{ Name: "TRADITIONAL", 	Threshold: 185, }, 
+	{ Name: "BAREBOW", 		Threshold: 185, }, 
 }
 
 func randDivision() int {

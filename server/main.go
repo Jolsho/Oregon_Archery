@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -25,13 +26,19 @@ func handleShutdown(onShutdown func()) {
     }()
 }
 
+//const LOG_FILE = "/var/ohsal/logs/ohsal.log";
+//const KEY_PATH = "/var/ohsal/KEYS.txt";
+
+const LOG_FILE = "../mnt/ohsal/logs/ohsal.log";
+const KEY_PATH = "../mnt/ohsal/KEYS.txt";
+
+const LISTEN_IP = "127.0.0.1";
+const LISTEN_PORT = 8080;
 
 func main() {
 
 	state := state.New_State();
 
-	const LOG_FILE = "/var/ohsal/logs/ohsal.log"
-	const KEY_PATH = "/var/ohsal/KEYS.txt"
 	net := network.New_Networker(KEY_PATH, LOG_FILE);
 
 
@@ -39,7 +46,9 @@ func main() {
 	// 				PATHS 	  
 
 	dst, ok := os.LookupEnv("dst_dir");
-	if !ok { dst = "../ui/"; }
+	if !ok { 
+		dst = "../ui/"; 
+	}
 
 	mux := http.NewServeMux();
 	mux.Handle("/", http.FileServer(http.Dir(dst)));
@@ -49,7 +58,7 @@ func main() {
 	});
 	mux.HandleFunc("/ws", func (w http.ResponseWriter, r *http.Request) {
 		handlers.Handle_WS(net, state, w, r);
-	})
+	});
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if cookie := network.Secure_Middleware(net, w, r); cookie == nil { return }
 		mux.ServeHTTP(w, r)
@@ -59,7 +68,7 @@ func main() {
 
 
 	server := &http.Server{
-		Addr: "0.0.0.0:8080",
+		Addr: fmt.Sprintf("%s:%d", LISTEN_IP, LISTEN_PORT),
 		Handler: handler,
 	};
 
