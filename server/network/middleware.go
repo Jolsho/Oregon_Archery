@@ -31,11 +31,6 @@ func Secure_Middleware(net *Networker, w http.ResponseWriter, r *http.Request) *
 
 	ip := Get_client_ip(r);
 
-	if expires, status := net.RateLimiter.Is_timed_out(ip); status != http.StatusOK { 
-		http.Error(w, "TIMEOUT UNTIL " + expires, http.StatusTooManyRequests);
-		return nil; 
-	}
-
 	cookie, err := r.Cookie(SESSION_COOKIE);
 	if err != nil {
 		if err != http.ErrNoCookie {
@@ -61,37 +56,14 @@ func Secure_Middleware(net *Networker, w http.ResponseWriter, r *http.Request) *
 		}
 
 		http.SetCookie(w, cookie);
-
-		log := fmt.Sprintf("NEW COOKIE for %s :: TOTAL %d", ip, len(net.RateLimiter.IpRates));
-		net.Logger.Log(INFO_LEVEL, log);
 	}
 
 	if err = verify_cookie(net, cookie, w); err != nil { 
 		log := fmt.Sprintf("INVALID COOKIE from %s :: %s", ip, err.Error());
 		net.Logger.Log(INFO_LEVEL, log);
 
-		timeout, err, status := net.RateLimiter.Handle_behaviour(ip, INFRACTION_INVALID_COOKIE);
-		if err != nil { 
-
-			log := fmt.Sprintf("TIMEDOUT %s because %s", ip, err.Error());
-			net.Logger.Log(INFO_LEVEL, log);
-
-			net.RateLimiter.Handle_timeout(ip, timeout, status)
-			http.Error(w, err.Error(), status);
-			return nil; 
-		};
 		return nil;
 	}
-
-	timeout, err, status := net.RateLimiter.Handle_rates(ip);
-	if err != nil { 
-		log := fmt.Sprintf("TIMEDOUT %s because %s", ip, err.Error());
-		net.Logger.Log(INFO_LEVEL, log);
-
-		net.RateLimiter.Handle_timeout(ip, timeout, status)
-		http.Error(w, err.Error(), status);
-		return nil; 
-	};
 
 	return cookie;
 }

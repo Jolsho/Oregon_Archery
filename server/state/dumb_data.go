@@ -11,9 +11,7 @@ var kinds = []string{"INDOOR", "OUTDOOR"}
 var DIVISIONS = []Division{
 	{ Name: "OPEN", 		Threshold: 280, }, 
 	{ Name: "MODERN", 		Threshold: 265, }, 
-
-	{ Name: "OLYMPIC", 		Threshold: 260, }, // TASK_3
-
+	{ Name: "OLYMPIC", 		Threshold: 270, },
 	{ Name: "TRADITIONAL", 	Threshold: 185, }, 
 }
 

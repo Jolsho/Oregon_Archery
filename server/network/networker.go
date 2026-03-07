@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"encoding/json"
-	"fmt"
 	"log"
 	"server/utils"
 	"sync"
@@ -31,7 +30,6 @@ type Networker struct {
 	ConnsMux *sync.RWMutex
 	Upgrader *websocket.Upgrader
 
-	RateLimiter *RateLimiter
 	Logger *Logger
 
 	PrivKey	*ecdsa.PrivateKey
@@ -40,8 +38,8 @@ type Networker struct {
 	workers *utils.WorkGroup
 }
 
-func New_Networker() *Networker {
-	priv, err := utils.LoadPrivateKey("/var/ohsal/KEYS.txt");
+func New_Networker(key_path, logger_path string) *Networker {
+	priv, err := utils.LoadPrivateKey(key_path);
 	if err != nil { 
 		panic("CANT LOAD PRIVATE KEY"); 
 	}
@@ -49,18 +47,11 @@ func New_Networker() *Networker {
 	workers := utils.NewWorkGroup()
 
 	// LOGGER
-	logger := New_logger();
+	logger := New_logger(logger_path);
 	go logger.start_writer(workers);
 	logger.Log(DEBUG_LEVEL, "LOGGER STARTED");
 
-	// RATE LIMITER
-	limiter := New_Rate_Limiter();
-	go limiter.start_cleaner(workers, logger)
-	logger.Log(DEBUG_LEVEL, "LIMITER STARTED CLEANING");
-
-
 	return &Networker{
-		RateLimiter: limiter,
 		Logger: logger,
 
 		Upgrader: New_Upgrader(),
@@ -86,19 +77,4 @@ func (net *Networker) Shutdown() {
 
 	net.workers.Cancel();
 	net.workers.WG.Wait();
-}
-
-
-func (net *Networker) Bad_Behaviour(infraction int, ip string) bool {
-	timeout, err, status := net.RateLimiter.Handle_behaviour(ip, infraction);
-	if err != nil { 
-
-		log := fmt.Sprintf("TIMEDOUT %s because %s", ip, err.Error());
-		net.Logger.Log(INFO_LEVEL, log);
-
-		net.RateLimiter.Handle_timeout(ip, timeout, status)
-
-		return false; 
-	};
-	return true;
 }

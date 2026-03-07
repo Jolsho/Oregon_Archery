@@ -44,7 +44,6 @@ func Handle_events(net *network.Networker, state *state_p.State, w http.Response
 		event.Kind = "OUTDOOR";
 		err := json.NewDecoder(r.Body).Decode(&event)
 		if err != nil {
-			net.Bad_Behaviour(network.INFRACTION_MALFORMED_DATA, ip);
 			http.Error(w, "invalid JSON body", http.StatusBadRequest)
 			return
 		}
@@ -60,7 +59,6 @@ func Handle_events(net *network.Networker, state *state_p.State, w http.Response
 				log := fmt.Sprintf("ATTEMPTED ACCESS OF UNOWNED EVENT from %s", ip);
 				net.Logger.Log(network.INFO_LEVEL, log)
 
-				net.Bad_Behaviour(network.INFRACTION_ATTEMPTED_ACCESS, ip);
 
 				http.Error(w, "INVALID SECRET", http.StatusUnauthorized);
 				return
@@ -74,7 +72,6 @@ func Handle_events(net *network.Networker, state *state_p.State, w http.Response
 				log := fmt.Sprintf("EVENT from %s FAILED SANITIZATION", ip);
 				net.Logger.Log(network.INFO_LEVEL, log)
 
-				net.Bad_Behaviour(network.INFRACTION_MALFORMED_DATA, ip);
 
 				http.Error(w, err.Error(), http.StatusBadRequest);
 				return;
@@ -95,7 +92,6 @@ func Handle_events(net *network.Networker, state *state_p.State, w http.Response
 				log := fmt.Sprintf("CREATED TOO MANY EVENTS %s", ip);
 				net.Logger.Log(network.INFO_LEVEL, log)
 
-				net.Bad_Behaviour(network.INFRACTION_TOO_MANY_EVENTS, ip);
 
 				http.Error(w, "TOO MANY EVENTS", http.StatusUnauthorized);
 				return
@@ -110,7 +106,6 @@ func Handle_events(net *network.Networker, state *state_p.State, w http.Response
 				log := fmt.Sprintf("EVENT from %s FAILED SANITIZATION", ip);
 				net.Logger.Log(network.INFO_LEVEL, log)
 
-				net.Bad_Behaviour(network.INFRACTION_MALFORMED_DATA, ip);
 
 				http.Error(w, err.Error(), http.StatusBadRequest);
 				return;
@@ -167,8 +162,6 @@ func Handle_events(net *network.Networker, state *state_p.State, w http.Response
 				log := fmt.Sprintf("ATTEMPTED ACCESS OF UNOWNED EVENT from %s", ip);
 				net.Logger.Log(network.INFO_LEVEL, log)
 
-				net.Bad_Behaviour(network.INFRACTION_ATTEMPTED_ACCESS, ip);
-
 				http.Error(w, "INVALID SECRET", http.StatusUnauthorized);
 				return;
 			}
@@ -181,8 +174,6 @@ func Handle_events(net *network.Networker, state *state_p.State, w http.Response
 
 		} else {
 			http.Error(w, "EVENT NOT EXISTS", http.StatusBadRequest);
-			net.Bad_Behaviour(network.INFRACTION_MALFORMED_DATA, ip);
-
 			return;
 		}
 
@@ -218,8 +209,6 @@ func Handle_events(net *network.Networker, state *state_p.State, w http.Response
 	default:
 		log := fmt.Sprintf("INVALID METHOD from %s", ip);
 		net.Logger.Log(network.INFO_LEVEL, log)
-
-		net.Bad_Behaviour(network.INFRACTION_MALFORMED_DATA, ip);
 
 		http.Error(w, "INVALID METHOD", http.StatusMethodNotAllowed);
 		return;

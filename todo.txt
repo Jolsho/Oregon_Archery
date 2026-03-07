@@ -1,12 +1,6 @@
-SATURDAY::
+ 
+MAKE SUBMIT MORE INTUITIVE
 
-    TASK_3 :: server/internals/dumb_data.go
-        Dont have "OLYMPIC" Threshold in DIVISIONS
-        ask CHRIS what it should be
+EDIT DIVISION THRESHOLDS ON EVENT CREATION
 
-
-MAYBE?
-
-    TASK_7 :: server/internals/ws.go
-        handle ws errors to restrict bad behaviour...
-        not sure what sort of meaningful errors will be here though
+SHOW DIVISION THRESHOLD KEY

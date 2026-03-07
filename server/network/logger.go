@@ -15,6 +15,7 @@ type LogEntry struct {
 }
 
 type Logger struct {
+	path 		string
 	file 		*os.File
 	file_size 	int
 	logChan		chan *LogEntry
@@ -72,15 +73,15 @@ func (logger *Logger) start_writer(group *utils.WorkGroup) {
 	}
 }
 
-const LOG_FILE = "/var/ohsal/logs/ohsal.log"
-func New_logger() *Logger {
-	file, err := os.OpenFile(LOG_FILE, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644);
+func New_logger(path string) *Logger {
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644);
 	if err != nil { panic(err.Error()); }
 
 	const LOG_CHAN_SIZE = 256;
 	const LOG_STACK_SIZE = 128;
 
 	logger := &Logger {
+		path: path,
 		file: file,
 		logChan: make(chan *LogEntry, LOG_CHAN_SIZE),
 		logStack: make(chan *LogEntry, LOG_STACK_SIZE),
@@ -119,10 +120,10 @@ func (logger *Logger) rotateLog() {
 	timestamp := time.Now().UTC().Format("2006-01-02_15-04-05")
 	rotatedName := fmt.Sprintf("ohsal.%s.log", timestamp)
 
-	_ = os.Rename(LOG_FILE, rotatedName)
+	_ = os.Rename(logger.path, rotatedName)
 
 	// Open new log file
-	file, err := os.OpenFile(LOG_FILE, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	file, err := os.OpenFile(logger.path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil { 
 		panic(err) 
 	}

@@ -27,8 +27,12 @@ func handleShutdown(onShutdown func()) {
 
 
 func main() {
+
 	state := state.New_State();
-	net := network.New_Networker();
+
+	const LOG_FILE = "/var/ohsal/logs/ohsal.log"
+	const KEY_PATH = "/var/ohsal/KEYS.txt"
+	net := network.New_Networker(KEY_PATH, LOG_FILE);
 
 
 	//////////////////////////////////////////////
@@ -55,7 +59,7 @@ func main() {
 
 
 	server := &http.Server{
-		Addr: "0.0.0.0:80",
+		Addr: "0.0.0.0:8080",
 		Handler: handler,
 	};
 

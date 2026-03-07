@@ -22,9 +22,6 @@ func handler(state *st.State, net *network.Networker, conn *network.WSConn, msg 
 		if err != nil {
 			log := fmt.Sprintf("WS INVALID EVENT JSON from %s", conn.Ip);
 			net.Logger.Log(network.INFO_LEVEL, log)
-
-			ok := net.Bad_Behaviour(network.INFRACTION_MALFORMED_DATA, conn.Ip); 
-			if !ok { return; }
 		}
 
 		state.EventMux.Lock();
@@ -35,9 +32,6 @@ func handler(state *st.State, net *network.Networker, conn *network.WSConn, msg 
 			if existing.Secret != conn.Nonce {
 				log := fmt.Sprintf("WS ATTEMPTED ACCESS OF UNOWNED EVENT from %s", conn.Ip);
 				net.Logger.Log(network.INFO_LEVEL, log)
-
-				ok := net.Bad_Behaviour(network.INFRACTION_ATTEMPTED_ACCESS, conn.Ip); 
-				if !ok { return; }
 			}
 
 			pay.event.Secret = conn.Nonce;
@@ -47,9 +41,6 @@ func handler(state *st.State, net *network.Networker, conn *network.WSConn, msg 
 			if err != nil {
 				log := fmt.Sprintf("WS EVENT from %s FAILED SANITIZATION", conn.Ip);
 				net.Logger.Log(network.INFO_LEVEL, log)
-
-				ok := net.Bad_Behaviour(network.INFRACTION_MALFORMED_DATA, conn.Ip); 
-				if !ok { return; }
 			}
 		} else {
 
@@ -61,8 +52,6 @@ func handler(state *st.State, net *network.Networker, conn *network.WSConn, msg 
 
 				log := fmt.Sprintf("EVENT from %s FAILED SANITIZATION", conn.Ip);
 				net.Logger.Log(network.INFO_LEVEL, log)
-
-				net.Bad_Behaviour(network.INFRACTION_MALFORMED_DATA, conn.Ip);
 				return;
 			}
 
@@ -71,7 +60,6 @@ func handler(state *st.State, net *network.Networker, conn *network.WSConn, msg 
 
 	}
 	default: {
-		_ = net.Bad_Behaviour(network.INFRACTION_MALFORMED_DATA, conn.Ip); 
 		return;
 	}
 	}
@@ -154,11 +142,11 @@ func readLoop(state *st.State, net *network.Networker, conn *network.WSConn) {
 				) {
 					log := fmt.Sprintf("WS CLOSE ERR for %s :: %s", conn.Ip, err.Error());
 					net.Logger.Log(network.INFO_LEVEL, log)
-					conn.Cancel();
 				} else {
 					log := fmt.Sprintf("WS READ_JSON for %s :: %s", conn.Ip, err.Error());
 					net.Logger.Log(network.INFO_LEVEL, log)
 				}
+				conn.Cancel();
 				return
 			}
 
