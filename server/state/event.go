@@ -59,7 +59,7 @@ func (ev *Event) Sanitize() error {
 	ev.IsPersisted = true;
 
 	if len(ev.Divisions) > 10 {
-		return errors.New("NO MANY DIVISIONS")
+		return errors.New("TOO MANY DIVISIONS")
 	}
 
 	if (time.Since(ev.CreatedAt) < 0) {

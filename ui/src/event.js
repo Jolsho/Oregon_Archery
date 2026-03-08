@@ -236,7 +236,7 @@ function render_event_edit_panel(title_container, state) {
 
             scoresPerTeamInput.addEventListener("keydown", (e) => {
                 if (e.key == "Enter") {
-                    submit_event(state, title_container, title);
+                    submit_event(state, title_container);
                 }
             });
         } else if (kind === "INDOOR") {
@@ -258,7 +258,7 @@ function render_event_edit_panel(title_container, state) {
 
                 division_input.addEventListener("keydown", (e) => {
                     if (e.key == "Enter") {
-                        submit_event(state, title_container, title);
+                        submit_event(state, title_container);
                     }
                 });
 
@@ -711,9 +711,8 @@ function render_team_leaderboard(container, event) {
 /**
  *  @param {State} state 
  *  @param {HTMLElement} parent 
- *  @param {HTMLElement} title 
  */
-function submit_event(state, parent, title) {
+function submit_event(state, parent) {
     let event = state.get_event();
     if (!!event.title) {
         if (state.is_unique_title(event.title)) {
@@ -740,8 +739,6 @@ function submit_event(state, parent, title) {
             err_msg.id = "event_err_msg";
         }
         err_msg.textContent = "Events must have titles.";
-
-        requestAnimationFrame(() => title.focus());
     }
 }
 
@@ -788,7 +785,7 @@ export function render_event(state, is_maluable = false) {
         });
         title.addEventListener("keydown", (e) => {
             if (e.key == "Enter") {
-                submit_event(state, title_container, title);
+                submit_event(state, title_container);
             }
         });
 
@@ -817,7 +814,7 @@ export function render_event(state, is_maluable = false) {
         );
         submit_team_btn.src = "icons/submit.svg";
         submit_team_btn.addEventListener("click", () => {
-            submit_event(state, title_container, title);
+            submit_event(state, title_container);
         });
         requestAnimationFrame(() => title.focus());
 

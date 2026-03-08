@@ -38,7 +38,7 @@ type Networker struct {
 	workers *utils.WorkGroup
 }
 
-func New_Networker(key_path, logger_path string) *Networker {
+func New_Networker(key_path, logger_path string, allowed_origins map[string]struct{}) *Networker {
 	priv, err := utils.LoadPrivateKey(key_path);
 	if err != nil { 
 		panic("CANT LOAD PRIVATE KEY"); 
@@ -54,7 +54,7 @@ func New_Networker(key_path, logger_path string) *Networker {
 	return &Networker{
 		Logger: logger,
 
-		Upgrader: New_Upgrader(),
+		Upgrader: New_Upgrader(allowed_origins),
 		Conns: make(map[string]*WSConn, 32),
 		ConnsMux: &sync.RWMutex{},
 

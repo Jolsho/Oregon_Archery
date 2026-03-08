@@ -16,7 +16,11 @@ func handler(state *st.State, net *network.Networker, conn *network.WSConn, msg 
 	switch msg.Msg {
 	case "new_event": {
 		
-		pay := struct { event st.Event }{ event: st.Event{} };
+		pay := struct { 
+			Event st.Event `json:"event"`
+		}{ 
+			Event: st.Event{},
+		};
 
 		err := json.Unmarshal(msg.Payload, &pay);
 		if err != nil {
@@ -27,35 +31,34 @@ func handler(state *st.State, net *network.Networker, conn *network.WSConn, msg 
 		state.EventMux.Lock();
 		defer state.EventMux.Unlock();
 
-		existing := state.Event_exists(pay.event.Title);
+		existing := state.Event_exists(pay.Event.Title);
 		if existing != nil {
 			if existing.Secret != conn.Nonce {
 				log := fmt.Sprintf("WS ATTEMPTED ACCESS OF UNOWNED EVENT from %s", conn.Ip);
 				net.Logger.Log(network.INFO_LEVEL, log)
 			}
 
-			pay.event.Secret = conn.Nonce;
-			*existing = pay.event;
+			pay.Event.Secret = conn.Nonce;
+			*existing = pay.Event;
 
 			err := existing.Sanitize();
 			if err != nil {
-				log := fmt.Sprintf("WS EVENT from %s FAILED SANITIZATION", conn.Ip);
+				log := fmt.Sprintf("WS EVENT1 from %s FAILED SANITIZATION :: %s", conn.Ip, err.Error());
 				net.Logger.Log(network.INFO_LEVEL, log)
 			}
 		} else {
 
-			pay.event.Secret = conn.Nonce;
-			pay.event.IsOwn = true;
+			pay.Event.Secret = conn.Nonce;
+			pay.Event.IsOwn = true;
 
-			err := pay.event.Sanitize();
+			err := pay.Event.Sanitize();
 			if err != nil {
-
-				log := fmt.Sprintf("EVENT from %s FAILED SANITIZATION", conn.Ip);
+				log := fmt.Sprintf("WS EVENT2 from %s FAILED SANITIZATION :: %s", conn.Ip, err.Error());
 				net.Logger.Log(network.INFO_LEVEL, log)
 				return;
 			}
 
-			state.Events = append(state.Events, pay.event);
+			state.Events = append(state.Events, pay.Event);
 		}
 
 	}

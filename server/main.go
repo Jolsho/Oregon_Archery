@@ -13,8 +13,6 @@ import (
 	"syscall"
 )
 
-var debug = flag.Bool("debug", false, "enable debug logging")
-
 func handleShutdown(onShutdown func()) {
     sigCh := make(chan os.Signal, 1)
     signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
@@ -26,32 +24,44 @@ func handleShutdown(onShutdown func()) {
     }()
 }
 
-//const LOG_FILE = "/var/ohsal/logs/ohsal.log";
-//const KEY_PATH = "/var/ohsal/KEYS.txt";
 
-const LOG_FILE = "../mnt/ohsal/logs/ohsal.log";
-const KEY_PATH = "../mnt/ohsal/KEYS.txt";
-
-const LISTEN_IP = "127.0.0.1";
-const LISTEN_PORT = 8080;
 
 func main() {
 
+	DST := "/app/ui"; 
+	LOG_FILE := "/var/ohsal/logs/ohsal.log";
+	KEY_PATH := "/var/ohsal/KEYS.txt";
+
+	LISTEN_IP := "0.0.0.0";
+	LISTEN_PORT := 80;
+
+	allowedOrigins := map[string]struct{}{
+		"https://testohsal.com":     	{},
+		"https://www.testohsal.com":    {},
+	}
+
+	test := flag.Bool("test", false, "run in test mode")
+	flag.Parse()
+
+	if *test {
+		LOG_FILE = "../mnt/ohsal/logs/ohsal.log";
+		KEY_PATH = "../mnt/ohsal/KEYS.txt";
+
+		LISTEN_IP = "127.0.0.1";
+		LISTEN_PORT = 8080;
+		DST = "../ui";
+
+		allowedOrigins["http://localhost:8080"] = struct{}{};
+	}
+
 	state := state.New_State();
-
-	net := network.New_Networker(KEY_PATH, LOG_FILE);
-
+	net := network.New_Networker(KEY_PATH, LOG_FILE, allowedOrigins);
 
 	//////////////////////////////////////////////
 	// 				PATHS 	  
 
-	dst, ok := os.LookupEnv("dst_dir");
-	if !ok { 
-		dst = "../ui/"; 
-	}
-
 	mux := http.NewServeMux();
-	mux.Handle("/", http.FileServer(http.Dir(dst)));
+	mux.Handle("/", http.FileServer(http.Dir(DST)));
 
 	mux.HandleFunc("/events", func (w http.ResponseWriter, r *http.Request) {
 		handlers.Handle_events(net, state, w, r);

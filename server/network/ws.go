@@ -16,32 +16,28 @@ func ws_error_handler(
 	http.Error(w, reason.Error(), status)
 };
 
-var allowedOrigins = map[string]struct{}{
-	"https://testohsal.com":     {},
-	"https://www.testohsal.com":     {},
-}
-func check_origin(r *http.Request) bool {
-    origin := r.Header.Get("Origin")
-    if origin == "" {
-        // Fallback for some older browsers / edge cases
-        ref := r.Header.Get("Referer")
-        if ref == "" {
-            return false
-        }
-
-        u, err := url.Parse(ref)
-        if err != nil { return false }
-
-        origin = u.Scheme + "://" + u.Host
-    }
-
-    _, ok := allowedOrigins[origin]
-    return ok
-};
-
 const READ_BUFFER_SIZE = 1024;
 const WRITE_BUFFER_SIZE = 1024;
-func New_Upgrader() *websocket.Upgrader {
+func New_Upgrader(allowed_origins map[string]struct{}) *websocket.Upgrader {
+	check_origin := func (r *http.Request) bool {
+		origin := r.Header.Get("Origin")
+		if origin == "" {
+			// Fallback for some older browsers / edge cases
+			ref := r.Header.Get("Referer")
+			if ref == "" {
+				return false
+			}
+
+			u, err := url.Parse(ref)
+			if err != nil { return false }
+
+			origin = u.Scheme + "://" + u.Host
+		}
+
+		_, ok := allowed_origins[origin]
+		return ok
+	};
+
 	return &websocket.Upgrader{
 		HandshakeTimeout: time.Duration(time.Duration(4).Seconds()),
 		ReadBufferSize: READ_BUFFER_SIZE,

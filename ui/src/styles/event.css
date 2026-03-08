@@ -13,6 +13,7 @@
     flex-direction: column;
     align-items: center;
     .title_container {
+        margin-top: 1rem;
         position: relative;
         display: grid;
         grid-template-columns: 40px 1fr 40px;
@@ -31,8 +32,10 @@
             position: absolute;
             bottom: 100%;
             left: 20px;
+            margin: 0;
         }
     }
+
 }
 
 .edit_event_panel {
