@@ -9,10 +9,15 @@ import (
 var kinds = []string{"INDOOR", "OUTDOOR"}
 
 var DIVISIONS = []Division{
-	{ Name: "OPEN", 		Threshold: 280, }, 
-	{ Name: "MODERN", 		Threshold: 265, }, 
-	{ Name: "OLYMPIC", 		Threshold: 270, },
-	{ Name: "BAREBOW", 		Threshold: 185, }, 
+	{ Name: "MALE OPEN", 		Threshold: 280, }, 
+	{ Name: "MALE MODERN", 		Threshold: 265, }, 
+	{ Name: "MALE OLYMPIC", 	Threshold: 270, },
+	{ Name: "MALE BAREBOW", 	Threshold: 185, }, 
+
+	{ Name: "FEMALE OPEN", 		Threshold: 280, }, 
+	{ Name: "FEMALE MODERN", 	Threshold: 265, }, 
+	{ Name: "FEMALE OLYMPIC", 	Threshold: 270, },
+	{ Name: "FEMALE BAREBOW", 	Threshold: 185, }, 
 }
 
 func randDivision() int {

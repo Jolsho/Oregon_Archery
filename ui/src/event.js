@@ -48,10 +48,15 @@ const MASCOT_NAMES = [
     "Wolves",
 ];
 const DIVISIONS = [
-	{ name: "OPEN", 		threshold: 280, }, 
-	{ name: "MODERN", 		threshold: 265, }, 
-	{ name: "OLYMPIC", 		threshold: 260, },
-	{ name: "BAREBOW", 	    threshold: 185, }, 
+	{ name: "MALE OPEN", 	    threshold: 280, }, 
+	{ name: "MALE MODERN",      threshold: 265, }, 
+	{ name: "MALE OLYMPIC",     threshold: 270, },
+	{ name: "MALE BAREBOW",     threshold: 185, }, 
+
+	{ name: "FEMALE OPEN", 	    threshold: 280, }, 
+	{ name: "FEMALE MODERN", 	threshold: 265, }, 
+	{ name: "FEMALE OLYMPIC", 	threshold: 270, },
+	{ name: "FEMALE BAREBOW", 	threshold: 185, }, 
 ];
 
 export class Event {
@@ -388,9 +393,10 @@ function render_teamboard(state, event, team, is_maluable = false) {
         // DIVISION
         let division = create_elem("p", entry, "division");
         let label = create_elem("span", division);
-        label.textContent = get_division(event, part.division)
-            .name.slice(0, 3)
-            .toUpperCase();
+        let names = get_division(event, part.division).name.split(" ");
+        let d = names[1].slice(0, 3).toUpperCase();
+        let gender =  names[0][0].toUpperCase();
+        label.textContent = `${gender} ${d}`;
 
         seperator = create_elem("hr", entry);
 
@@ -512,10 +518,14 @@ function render_teamboard_mut(state, event, team, team_existed) {
         event?.divisions.forEach((div, i) => {
             let option = create_elem("div", menu, "div_option", "roboto-mono-norm");
 
-            option.textContent = div.name;
+            let names = div.name.split(" ");
+            let d = names[1].toUpperCase();
+            let gender =  names[0][0].toUpperCase();
+            option.textContent = `${gender} ${d}`;
+
             option.addEventListener("click", (e) => {
                 e.stopPropagation(); // prevents reopening immediately
-                label.textContent = div.name.slice(0, 3).toUpperCase(); // only update the label
+                label.textContent = `${gender} ${d.slice(0, 3)}`; // only update the label
                 team.members[idx].division = i;
                 menu.classList.remove("visible");
             });
@@ -592,16 +602,17 @@ function render_leaderboard(container, event) {
         let entry = create_elem("div", box, "leader");
 
         let header = create_elem("h1", entry, "roboto-mono-norm");
-        header.textContent = div.name;
+        header.textContent = div.name.split(" ")[1];
 
-        if (event.kind == "INDOOR") {
-            let entry = create_elem("div", header, "varsity_container");
+        let gender = create_elem("h2", entry, 
+            "roboto-mono-norm", "side_value", "left"
+        );
+        gender.textContent = div.name.split(" ")[0][0];
 
-            let title = create_elem("h2", entry, 
-                "roboto-mono-norm", "varsity_threshold"
-            );
-            title.textContent = "V:" + div.threshold;
-        }
+        let thresh = create_elem("h2", entry, 
+            "roboto-mono-norm", "side_value"
+        );
+        thresh.textContent = "V:" + div.threshold;
 
         if (!!leaders) {
             leaders.forEach((leader, i) => {
