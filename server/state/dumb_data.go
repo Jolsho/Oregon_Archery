@@ -28,6 +28,7 @@ var Events = []Event{
 		Leaders:   map[string]int{},
 		Divisions: DIVISIONS,
 		Kind: "INDOOR",
+		CreatedAt: time.Now(),
 		Expires: time.Now().Add(24 * time.Hour),
 		Secret: utils.Rand_8_str_ignored(),
 		Teams: map[string]Team{
@@ -64,6 +65,7 @@ var Events = []Event{
 		Leaders:   map[string]int{},
 		Divisions: DIVISIONS,
 		Kind: "INDOOR",
+		CreatedAt: time.Now(),
 		Expires: time.Now().Add(24 * time.Hour),
 		Secret: utils.Rand_8_str_ignored(),
 		Teams: map[string]Team{
@@ -114,6 +116,7 @@ var Events = []Event{
 		Leaders:   map[string]int{},
 		Divisions: DIVISIONS,
 		Kind: "OUTDOOR",
+		CreatedAt: time.Now(),
 		Expires: time.Now().Add(24 * time.Hour),
 		ScoresPerTeam: 3,
 		Secret: utils.Rand_8_str_ignored(),
@@ -175,6 +178,7 @@ var Events = []Event{
 		Leaders:   map[string]int{},
 		Divisions: DIVISIONS,
 		Kind: "OUTDOOR",
+		CreatedAt: time.Now(),
 		Expires: time.Now().Add(24 * time.Hour),
 		ScoresPerTeam: 3,
 		Secret: utils.Rand_8_str_ignored(),
