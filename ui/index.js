@@ -7,6 +7,7 @@ let state = new State();
 
 get_events().then((es) => {
     state.events = es
+    state.events.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     render_menu(state);
     render_event(state);
     run_websocket(state);

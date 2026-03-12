@@ -26,6 +26,7 @@ export class State {
 
         /** @type {boolean} */
         this.manual_status = false;
+
     };
 
     /** 
@@ -49,6 +50,11 @@ export class State {
         if (idx == -1) idx = this.current_event_idx;
         if (this.events.length > idx) {
             this.events[idx] = ev;
+            this.events.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            if (idx = this.current_event_idx) {
+                this.current_event_idx = this.events.findIndex(e => e == ev);
+            }
         }
     }
 

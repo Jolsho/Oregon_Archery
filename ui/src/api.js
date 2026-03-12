@@ -1,6 +1,7 @@
 import { Event, render_event } from "./event.js";
 import { update_connection_status, render_menu } from "./menu.js";
 import { State } from "./state.js";
+import { insertSorted } from "./utils.js";
 
 /**
  * @param {State} state
@@ -39,7 +40,7 @@ export async function run_websocket(state) {
 
                     state.set_event(data.payload.event, idx);
                 } else {
-                    state.events.push(data.payload.event);
+                    insertSorted(state.events, data.payload.event);
                 }
 
                 render_menu(state);

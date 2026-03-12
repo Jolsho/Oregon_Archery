@@ -50,7 +50,7 @@ const MASCOT_NAMES = [
 const DIVISIONS = [
 	{ name: "OPEN", 		threshold: 280, }, 
 	{ name: "MODERN", 		threshold: 265, }, 
-	{ name: "OLYMPIC", 		threshold: 260, }, // TASK_3
+	{ name: "OLYMPIC", 		threshold: 260, },
 	{ name: "BAREBOW", 	    threshold: 185, }, 
 ];
 
@@ -80,6 +80,14 @@ export class Event {
 
         /** @type {string[]} */
         this.kind = kind;
+
+        /** @type {Date} */
+        this.created_at = new Date();
+
+        /** @type {Date} */
+        this.expires = new Date();
+
+
     }
 }
 
