@@ -13,7 +13,6 @@
     flex-direction: column;
     align-items: center;
     .title_container {
-        height: 86px;
         margin-top: 1rem;
         position: relative;
         display: grid;
@@ -46,7 +45,7 @@
 
     width: 75%;
     height: fit-content;
-    top: 100%;
+    top: 110%;
     z-index: 2;
 
     background-color: var(--input-color);
@@ -59,7 +58,7 @@
     gap: 10px;
 
     .right_label {
-        width: 225px;
+        width: 200px;
         text-align: right;
         margin-right: 1rem;
     }
@@ -101,7 +100,6 @@
 }
 
 .leader {
-    height: 24px;
     width: 100%;
     border-bottom: solid 2px black;
     display: grid;
@@ -129,7 +127,7 @@
 
     hr {
         border:none;
-        height: 24px;
+        height: 20px;
         background-color: black;
         width: 1px;
         margin: 0;
@@ -150,7 +148,6 @@
         left: -20px;
         top: 5px;
         font-size: large !important;
-        font-weight: 400;
     }
 
     .side_value {
@@ -165,13 +162,12 @@
         height: fit-content;
         text-align: center;
         grid-column: 1 / -1;
-
-        font-weight: 400;
     }
     .left {
         left: 0;
-        width: fit-content;
+        width: 10px;
     }
+
 }
 
 .team_boards {
@@ -206,7 +202,7 @@
         gap: 4rem 3rem;
     }
     .participant_entry {
-        grid-template-columns: 145px 1px 45px 1px 40px 1px 30px !important;
+        grid-template-columns: 145px 2px 35px 2px 45px 2px 30px !important;
         gap: 0.5rem !important;
 
         input {
@@ -401,6 +397,21 @@
     background: var(--input-color);
     border: 1px solid black;
     padding: 0.5rem;
+
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(4px);
+    transition:
+        opacity 120ms ease,
+        transform 120ms ease;
+}
+
+.visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
 }
 
 .division_menu div {

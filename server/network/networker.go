@@ -26,8 +26,6 @@ type WSConn struct {
 }
 
 type Networker struct {
-	KeyPath string
-
 	Conns	map[string]*WSConn
 	ConnsMux *sync.RWMutex
 	Upgrader *websocket.Upgrader
@@ -54,7 +52,6 @@ func New_Networker(key_path, logger_path string, allowed_origins map[string]stru
 	logger.Log(DEBUG_LEVEL, "LOGGER STARTED");
 
 	return &Networker{
-		KeyPath: key_path,
 		Logger: logger,
 
 		Upgrader: New_Upgrader(allowed_origins),
@@ -69,7 +66,7 @@ func New_Networker(key_path, logger_path string, allowed_origins map[string]stru
 }
 
 func (net *Networker) Shutdown() {
-	err := utils.SavePrivateKey(net.KeyPath, net.PrivKey)
+	err := utils.SavePrivateKey("/var/ohsal/KEYS.txt", net.PrivKey)
 	if err != nil { 
 		log.Fatal("STATE_PERSIST::SAVE_KEY::",err.Error()) 
 	}

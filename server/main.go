@@ -49,7 +49,7 @@ func main() {
 
 		LISTEN_IP = "127.0.0.1";
 		LISTEN_PORT = 8080;
-		DST = "../react/ohsal/dist";
+		DST = "../ui";
 
 		allowedOrigins["http://localhost:8080"] = struct{}{};
 	}

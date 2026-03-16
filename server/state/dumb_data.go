@@ -30,13 +30,14 @@ func randKind() string {
 var Events = []Event{
 	{
 		Title:     "Thurston vs Jesuit",
+		Leaders:   map[string]int{},
 		Divisions: DIVISIONS,
-		Kind:      "INDOOR",
+		Kind: "INDOOR",
 		CreatedAt: time.Now(),
-		Expires:   time.Now().Add(24 * time.Hour),
-		Secret:    utils.Rand_8_str_ignored(),
-		Teams: []Team{
-			{
+		Expires: time.Now().Add(24 * time.Hour),
+		Secret: utils.Rand_8_str_ignored(),
+		Teams: map[string]Team{
+			"Thurston": {
 				Name:   "Thurston",
 				Score:  0,
 				XCount: 0,
@@ -49,7 +50,7 @@ var Events = []Event{
 					{Name: "Riley Chen", Division: randDivision(), Score: 459, XCount: 14},
 				},
 			},
-			{
+			"Jesuit": {
 				Name:   "Jesuit",
 				Score:  0,
 				XCount: 0,
@@ -66,13 +67,14 @@ var Events = []Event{
 
 	{
 		Title:     "Oregon Outdoor State Championship",
+		Leaders:   map[string]int{},
 		Divisions: DIVISIONS,
-		Kind:      "INDOOR",
+		Kind: "INDOOR",
 		CreatedAt: time.Now(),
-		Expires:   time.Now().Add(24 * time.Hour),
-		Secret:    utils.Rand_8_str_ignored(),
-		Teams: []Team{
-			{
+		Expires: time.Now().Add(24 * time.Hour),
+		Secret: utils.Rand_8_str_ignored(),
+		Teams: map[string]Team{
+			"Central Catholic": {
 				Name:   "Central Catholic",
 				Score:  0,
 				XCount: 0,
@@ -86,7 +88,7 @@ var Events = []Event{
 					{Name: "Kevin Foster", Division: randDivision(), Score: 436, XCount: 9},
 				},
 			},
-			{
+			"Jesuit": {
 				Name:   "Jesuit",
 				Score:  0,
 				XCount: 0,
@@ -98,7 +100,7 @@ var Events = []Event{
 					{Name: "Victor Gomez", Division: randDivision(), Score: 475, XCount: 19},
 				},
 			},
-			{
+			"West Linn": {
 				Name:   "West Linn",
 				Score:  0,
 				XCount: 0,
@@ -115,15 +117,16 @@ var Events = []Event{
 	},
 
 	{
-		Title:         "OHSAL Public Open",
-		Divisions:     DIVISIONS,
-		Kind:          "OUTDOOR",
-		CreatedAt:     time.Now(),
-		Expires:       time.Now().Add(24 * time.Hour),
+		Title:     "OHSAL Public Open",
+		Leaders:   map[string]int{},
+		Divisions: DIVISIONS,
+		Kind: "OUTDOOR",
+		CreatedAt: time.Now(),
+		Expires: time.Now().Add(24 * time.Hour),
 		ScoresPerTeam: 3,
-		Secret:        utils.Rand_8_str_ignored(),
-		Teams: []Team{
-			{
+		Secret: utils.Rand_8_str_ignored(),
+		Teams: map[string]Team{
+			"Springfield": {
 				Name:   "Springfield",
 				Score:  0,
 				XCount: 0,
@@ -135,7 +138,7 @@ var Events = []Event{
 					{Name: "Miguel Santos", Division: randDivision(), Score: 458, XCount: 14},
 				},
 			},
-			{
+			"North Salem": {
 				Name:   "North Salem",
 				Score:  0,
 				XCount: 0,
@@ -148,7 +151,7 @@ var Events = []Event{
 					{Name: "Jesse Long", Division: randDivision(), Score: 382, XCount: 2},
 				},
 			},
-			{
+			"McKenzie": {
 				Name:   "McKenzie",
 				Score:  0,
 				XCount: 0,
@@ -160,7 +163,7 @@ var Events = []Event{
 					{Name: "Miles Carter", Division: randDivision(), Score: 452, XCount: 13},
 				},
 			},
-			{
+			"Ashland": {
 				Name:   "Ashland",
 				Score:  0,
 				XCount: 0,
@@ -176,15 +179,16 @@ var Events = []Event{
 	},
 
 	{
-		Title:         "4A State Qualifiers",
-		Divisions:     DIVISIONS,
-		Kind:          "OUTDOOR",
-		CreatedAt:     time.Now(),
-		Expires:       time.Now().Add(24 * time.Hour),
+		Title:     "4A State Qualifiers",
+		Leaders:   map[string]int{},
+		Divisions: DIVISIONS,
+		Kind: "OUTDOOR",
+		CreatedAt: time.Now(),
+		Expires: time.Now().Add(24 * time.Hour),
 		ScoresPerTeam: 3,
-		Secret:        utils.Rand_8_str_ignored(),
-		Teams: []Team{
-			{
+		Secret: utils.Rand_8_str_ignored(),
+		Teams: map[string]Team{
+			"Roseburg": {
 				Name:   "Roseburg",
 				Score:  0,
 				XCount: 0,
@@ -196,7 +200,7 @@ var Events = []Event{
 					{Name: "Jonah Klein", Division: randDivision(), Score: 459, XCount: 15},
 				},
 			},
-			{
+			"Silverton": {
 				Name:   "Silverton",
 				Score:  0,
 				XCount: 0,
@@ -209,7 +213,7 @@ var Events = []Event{
 					{Name: "Finn Carter", Division: randDivision(), Score: 387, XCount: 2},
 				},
 			},
-			{
+			"Stayton": {
 				Name:   "Stayton",
 				Score:  0,
 				XCount: 0,
