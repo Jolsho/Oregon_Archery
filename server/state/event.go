@@ -30,9 +30,8 @@ type Event struct {
 	Title         string          `json:"title"`
 	IsOwn         bool            `json:"is_own"`
 	IsPersisted   bool            `json:"is_persisted"`
-	Leaders       map[string]int  `json:"leaders"`
 	Divisions     []Division      `json:"divisions"`
-	Teams         map[string]Team `json:"teams"`
+	Teams         []Team 		  `json:"teams"`
 	Kind          string          `json:"kind"`
 	ScoresPerTeam int             `json:"scores_per_team"`
 	Expires       time.Time       `json:"expires"`
