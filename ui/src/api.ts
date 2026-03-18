@@ -7,7 +7,7 @@ type GetRes = {
 }
 
 const DEFAULT_TIMEOUT   = 5000; // timeout in milliseconds
-export const ROOT_URL = import.meta.env.VITE_ROOT_API;
+export const ROOT_URL = import.meta.env.PROD ? "https://testohsal.com" : "http://127.0.0.1:8080";
 
 export async function get_events(
     cookie_store: Store,

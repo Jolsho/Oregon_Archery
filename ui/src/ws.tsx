@@ -10,7 +10,7 @@ type WSHandlers = {
     onClose?: (ev: CloseEvent) => void;
 };
 
-export const WS_URL = import.meta.env.VITE_WS_API;
+export const WS_URL = import.meta.env.PROD ? "wss://testohsal.com/ws" : "ws://127.0.0.1:8080/ws";
 
 export type WSReturn = {
     send:       (data: any) => void;
