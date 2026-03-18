@@ -18,10 +18,6 @@ jobs:
             args: "--target aarch64-apple-darwin" # M1 / Apple Silicon
           - platform: "macos-latest"
             args: "--target x86_64-apple-darwin" # Intel Mac
-          - platform: "ubuntu-22.04"
-            args: ""
-          - platform: "windows-latest"
-            args: ""
 
     runs-on: ${{ matrix.platform }}
     defaults:
@@ -68,7 +64,11 @@ jobs:
 
       - name: List macOS bundle folder
         if: matrix.platform == 'macos-latest'
-        run: ls -l ./ui/src-tauri/target/release/bundle
+        run: ls -l ./ui/src-tauri/target
+
+      - name: List macOS bundle folder
+        if: matrix.platform == 'macos-latest'
+        run: ls -l ./ui/src-tauri/target/release
 
       - name: Upload build artifacts - macOS
         if: matrix.platform == 'macos-latest'
