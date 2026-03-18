@@ -82,25 +82,26 @@ function App() {
         }
     }, [])
 
-    async function submit_event(ev: EventT): Promise<string> {
-        let msg = "";
-        try {
-            if (!!store) {
-                await post_event(store, ev);
-                ev.is_persisted = true;
-            }
-        } catch (e) {
-            if (e instanceof Error) msg = e.message;
-            ev.is_persisted = false;
-        }
-
+    function submit_event(ev: EventT) {
+        ev.is_persisted = false;
         setEvents((prev) => {
             let evs = [...prev];
             evs[curr_idx] = ev;
             return evs;
         });
 
-        return msg;
+        if (!!store) {
+            post_event(store, ev)
+            .then(() => {
+                ev.is_persisted = true;
+                setEvents((prev) => {
+                    let evs = [...prev];
+                    evs[curr_idx] = ev;
+                    return evs;
+                });
+            })
+            .catch((e) => console.error(e));
+        }
     }
 
     return (
@@ -130,7 +131,8 @@ function App() {
                         setCurrEvent(curr_idx - 1);
                         if (!!title) {
                             if (!store) return;
-                            delete_event(store, title).catch((e) => console.error(e));
+                            delete_event(store, title)
+                                .catch((e) => console.error(e));
                         }
                     }}
                 />

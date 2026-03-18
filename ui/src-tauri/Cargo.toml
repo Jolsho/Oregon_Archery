@@ -2,7 +2,7 @@
 name = "ohsal"
 version = "0.1.0"
 description = "Scoring App for OHSAL"
-authors = ["you"]
+authors = ["Jolsho"]
 license = ""
 repository = ""
 edition = "2021"

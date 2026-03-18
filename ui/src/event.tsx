@@ -203,7 +203,7 @@ function LeaderBoards({ event }: LeaderBoardProps) {
 export type EventPageProps = {
     events: EventT[];
     idx: number;
-    post_event: (event: EventT) => Promise<string>;
+    post_event: (event: EventT) => void;
     remove_event: () => void;
     maluable?: boolean;
 };
@@ -249,12 +249,9 @@ export function EventPage({
 
         ev.teams = ev.teams.filter(t => !!t.name);
 
-        post_event({...ev, title, kind, divisions, scores_per_team })
-        .then(_ => {
-            setMaluable(false);
-            setIsNew(false);
-        });
-
+        post_event({...ev, title, kind, divisions, scores_per_team });
+        setMaluable(false);
+        setIsNew(false);
     };
 
 

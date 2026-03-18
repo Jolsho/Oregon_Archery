@@ -38,6 +38,7 @@ func main() {
 	allowedOrigins := map[string]struct{}{
 		"https://testohsal.com":     	{},
 		"https://www.testohsal.com":    {},
+		"tauri://localhost": 			{},
 	}
 
 	test := flag.Bool("test", false, "run in test mode")
@@ -52,7 +53,6 @@ func main() {
 		DST = "../ui/dist";
 
 		allowedOrigins["http://localhost:8080"] = struct{}{};
-		allowedOrigins["tauri://localhost"] = struct{}{};
 		allowedOrigins["http://localhost:5174"] = struct{}{};
 	}
 
