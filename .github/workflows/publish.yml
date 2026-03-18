@@ -24,6 +24,10 @@ jobs:
             args: ""
 
     runs-on: ${{ matrix.platform }}
+    defaults:
+      run:
+        working-directory: ./ui
+
     steps:
       - uses: actions/checkout@v4
 
@@ -35,7 +39,6 @@ jobs:
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
-        working-directory: ./ui
         with:
           node-version: lts/*
           cache: "npm"
@@ -51,7 +54,6 @@ jobs:
           workspaces: "./ui/src-tauri -> target"
 
       - name: Install frontend dependencies
-        working-directory: ./ui
         run: npm install
 
       - uses: tauri-apps/tauri-action@v0
