@@ -35,6 +35,7 @@ jobs:
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
+        working-directory: ./ui
         with:
           node-version: lts/*
           cache: "npm"
