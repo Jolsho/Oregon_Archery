@@ -66,12 +66,16 @@ jobs:
           prerelease: false
           args: ${{ matrix.args }}
 
+      - name: List macOS bundle folder
+        if: matrix.platform == 'macos-latest'
+        run: ls -l ./ui/src-tauri/target/release/bundle
+
       - name: Upload build artifacts - macOS
         if: matrix.platform == 'macos-latest'
         uses: actions/upload-artifact@v4
         with:
           name: ohsal-macos
-          path: ./ui/src-tauri/target/release/bundle/dmg/*.dmg
+          path: ./ui/src-tauri/target/release/bundle/macos/*.dmg
 
       - name: Upload build artifacts - Linux
         if: matrix.platform == 'ubuntu-22.04'
