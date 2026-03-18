@@ -71,7 +71,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ohsal-macos
-          path: ./ui/src-tauri/target/release/bundle/macos/*.dmg
+          path: ./ui/src-tauri/target/release/bundle/dmg/*.dmg
 
       - name: Upload build artifacts - Linux
         if: matrix.platform == 'ubuntu-22.04'
