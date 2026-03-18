@@ -15,9 +15,17 @@ jobs:
       matrix:
         include:
           - platform: "macos-latest"
+            target: x86_64-apple-darwin
             args: "--target aarch64-apple-darwin" # M1 / Apple Silicon
+
           - platform: "macos-latest"
+            target: aarch64-apple-darwin
             args: "--target x86_64-apple-darwin" # Intel Mac
+
+          - platform: "ubuntu-22.04"
+            args: ""
+          - platform: "windows-latest"
+            args: ""
 
     runs-on: ${{ matrix.platform }}
     defaults:
@@ -62,20 +70,19 @@ jobs:
           prerelease: false
           args: ${{ matrix.args }}
 
-      - name: List macOS bundle folder
-        if: matrix.platform == 'macos-latest'
-        run: ls -l ./ui/src-tauri/target
-
-      - name: List macOS bundle folder
-        if: matrix.platform == 'macos-latest'
-        run: ls -l ./ui/src-tauri/target/release
-
-      - name: Upload build artifacts - macOS
+      - name: Upload macOS DMG
         if: matrix.platform == 'macos-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: ohsal-macos
-          path: ./ui/src-tauri/target/release/bundle/macos/*.dmg
+          name: ohsal-macos-dmg
+          path: ./ui/src-tauri/target/${{ matrix.target }}*/release/bundle/dmg/*.dmg
+
+      - name: Upload macOS APP
+        if: matrix.platform == 'macos-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ohsal-macos-app
+          path: ./ui/src-tauri/target/${{ matrix.target }}*/release/bundle/macos/*.app
 
       - name: Upload build artifacts - Linux
         if: matrix.platform == 'ubuntu-22.04'
