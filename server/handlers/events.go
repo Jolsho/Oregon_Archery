@@ -9,12 +9,21 @@ import (
 	"slices"
 )
 
+type EventRes struct {
+	Events []state_p.Event `json:"events"`
+	Token string `json:"token"`
+}
 
 func Handle_events(net *network.Networker, state *state_p.State, w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query();
 
-	cookie, _ := r.Cookie(network.SESSION_COOKIE)
-	nonce := network.Get_nonce(cookie);
+	token := q.Get("token");
+	if token == "" {
+		http.Error(w, "NO TOKEN", http.StatusBadRequest);
+		return;
+	}
+
+	nonce := network.Get_nonce(token);
 	ip := network.Get_client_ip(r);
 
 	switch r.Method {
@@ -22,13 +31,17 @@ func Handle_events(net *network.Networker, state *state_p.State, w http.Response
 		state.EventMux.RLock();
 		defer state.EventMux.RUnlock();
 
-		event_copy := state.Events;
-		for i := range event_copy {
-			ev := &event_copy[i];
+		res := EventRes{
+			Events: state.Events,
+			Token: token,
+		};
+		res.Events = state.Events;
+		for i := range res.Events {
+			ev := &res.Events[i];
 			ev.IsOwn = ev.Secret == nonce;
 		}
 
-		bytes, err := json.Marshal(event_copy)
+		bytes, err := json.Marshal(res)
 		if err != nil {
 			http.Error(w, "EVENT MARSHAL FAILED", http.StatusInternalServerError);
 			return;
@@ -138,13 +151,9 @@ func Handle_events(net *network.Networker, state *state_p.State, w http.Response
 			Msg: "new_event",
 			Payload: payload,
 		};
-		for conn_nonce, conn := range net.Conns {
-			if conn_nonce != nonce {
-				err := conn.Conn.WriteJSON(ws_msg)
-				if err != nil {
-					log := fmt.Sprintf("EVENT WRITE TO WS :: %s", err.Error());
-					net.Logger.Log(network.WARNING_LEVEL, log);
-				}
+		for _, conn := range net.Conns {
+			if conn.Nonce != nonce {
+				conn.Out <- ws_msg;
 			}
 		}
 	} 
@@ -197,11 +206,7 @@ func Handle_events(net *network.Networker, state *state_p.State, w http.Response
 		};
 		for conn_nonce, conn := range net.Conns {
 			if conn_nonce != nonce {
-				err := conn.Conn.WriteJSON(ws_msg)
-				if err != nil {
-					log := fmt.Sprintf("EVENT DELETE TO WS :: %s", err.Error());
-					net.Logger.Log(network.WARNING_LEVEL, log)
-				}
+				conn.Out <- ws_msg;
 			}
 		}
 	}

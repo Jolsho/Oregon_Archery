@@ -53,7 +53,7 @@ func generate_signed_cookie_value(
 		http.Error(w, "MARSHAL EXPIRE", http.StatusInternalServerError);
 		return "", expire, err;
 	};
-	expire_str := base64.StdEncoding.EncodeToString(expire_bytes);
+	expire_str := base64.URLEncoding.EncodeToString(expire_bytes);
 
 
 	hash, err := generate_cookie_hash(w, nonce, expire_str);
@@ -66,20 +66,19 @@ func generate_signed_cookie_value(
 		return "", expire, err;
 	}
 
-	cookie_val := base64.StdEncoding.EncodeToString(sig_bytes);
+	cookie_val := base64.URLEncoding.EncodeToString(sig_bytes);
 	cookie_val = cookie_val + ":" + nonce + ":" + expire_str;
 
 	return cookie_val, expire, nil
 }
 
-func Get_nonce(cookie *http.Cookie) string {
-	values := strings.Split(cookie.Value, ":")
-	return values[1];
-}
+func verify_token(
+	net *Networker, 
+	token *string, 
+	w http.ResponseWriter,
+) error {
 
-func verify_cookie(net *Networker, cookie *http.Cookie, w http.ResponseWriter) error {
-
-	values := strings.Split(cookie.Value, ":")
+	values := strings.Split(*token, ":")
 	if len(values) != 3 {
 		http.Error(w, "MALFORMED COOKIE", http.StatusUnauthorized)
 		return errors.New("MALFORMED COOKIE");
@@ -88,7 +87,7 @@ func verify_cookie(net *Networker, cookie *http.Cookie, w http.ResponseWriter) e
 	nonce := values[1];
 	expire_str := values[2];
 
-	expire_bytes, err := base64.StdEncoding.DecodeString(expire_str);
+	expire_bytes, err := base64.URLEncoding.DecodeString(expire_str);
 	if err != nil {
 		http.Error(w, "DECODE COOKIE EXPIRE", http.StatusInternalServerError);
 		return err;
@@ -104,7 +103,7 @@ func verify_cookie(net *Networker, cookie *http.Cookie, w http.ResponseWriter) e
 	hash, err := generate_cookie_hash(w, nonce, expire_str);
 	if err != nil { return err; }
 
-	signature, err := base64.StdEncoding.DecodeString(sig);
+	signature, err := base64.URLEncoding.DecodeString(sig);
 	if err != nil {
 		http.Error(w, "DECODE SIGNATURE", http.StatusUnauthorized)
 		return err;
@@ -117,14 +116,23 @@ func verify_cookie(net *Networker, cookie *http.Cookie, w http.ResponseWriter) e
 
 
 	if expire.Before(time.Now()) {
-		value, expire, err := generate_signed_cookie_value(net, w);
+		value, _, err := generate_signed_cookie_value(net, w);
 		if err != nil { return err; }
 
-		cookie.Value = value;
-		cookie.Expires = expire;
+		net.ConnsMux.Lock();
+		if c, exists := net.Conns[*token]; exists {
+			delete(net.Conns, *token);
+			net.Conns[value] = c;
+		}
+		net.ConnsMux.Unlock();
 
-		http.SetCookie(w, cookie);
+		*token = value;
 	}
 
 	return nil;
+}
+
+func Get_nonce(token string) string {
+	values := strings.Split(token, ":")
+	return values[1];
 }

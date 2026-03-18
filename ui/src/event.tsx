@@ -29,11 +29,11 @@ function EditEventPanel({
     <div className="edit_event_panel">
         <div className="kind_container">
             {KINDS.map((k) => (
-                <label className="roboto-mono-norm">{k}
+                <label className="roboto-mono-norm" key={"kind" + k}>{k}
                     <input type="radio" name="event-kind" 
                         value={k} 
                         checked={kind === k}
-                        onClick={() => setKind(k)}
+                        onChange={(e) => setKind(e.target.value)}
                     />
                 </label>
             ))}
@@ -115,12 +115,12 @@ function LeaderBoards({ event }: LeaderBoardProps) {
     return (
     <div className="leaderboard_grid">
     {/* DIVISION LEADER BOARDS */}
-    {event.divisions.map(div => {
+    {event.divisions.map((div, i) => {
         const ls = leaders.get(div.name);
         if (!ls) return;
 
         return (
-        <div className="leaderboard">
+        <div className="leaderboard" key={div.name + i}>
             <div className="leader">
                 <h1 className="roboto-mono-norm">
                     {div.name.split(" ")[1]}
@@ -146,7 +146,7 @@ function LeaderBoards({ event }: LeaderBoardProps) {
                 }
 
                 return (
-                <div className="leader">
+                <div className="leader" key={"leader" + leader.name + i}>
                     {!!name &&
                     <>
                     <h2 className="roboto-mono-norm">{name}</h2>
@@ -182,7 +182,7 @@ function LeaderBoards({ event }: LeaderBoardProps) {
                 name = names[0] + " " + names[1][0].toUpperCase() + ".";
             }
             return (
-            <div className="leader">
+            <div className="leader" key={"team_leader" + team.name + i}>
                 <h2 className="roboto-mono-norm">{name}</h2>
                 <hr/>
                 <h3 className="roboto-mono-norm">{team.score}</h3>

@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"server/network"
@@ -73,13 +74,13 @@ func Handle_WS(
 	net *network.Networker, state *st.State, 
 	w http.ResponseWriter, r *http.Request,
 ) {
-	cookie, err := r.Cookie(network.SESSION_COOKIE);
-	if err != nil { 
-		log := fmt.Sprintf("WS NO COOKIE from %s", network.Get_client_ip(r))
-		net.Logger.Log(network.INFO_LEVEL, log);
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return 
-	};
+	token := r.URL.Query().Get("token");
+	if token == "" {
+		log := fmt.Sprintf("FAILED WS UPGRADE for %s", network.Get_client_ip(r))
+		net.Logger.Log(network.WARNING_LEVEL, log);
+		http.Error(w, "INVALID TOKEN", http.StatusUnauthorized)
+		return;
+	}
 
 	conn, err := net.Upgrader.Upgrade(w, r, http.Header{});
 	if err != nil { 
@@ -96,16 +97,13 @@ func Handle_WS(
 		Ctx: ctx,
 		Cancel: cancel,
 		Out: make(chan network.WsMsg, 5),
-		Nonce: network.Get_nonce(cookie),
+		Nonce: token,
 		Ip: network.Get_client_ip(r),
 	};
 
 	net.ConnsMux.Lock();
 	net.Conns[bigConn.Nonce] = bigConn;
 	net.ConnsMux.Unlock();
-
-	log := fmt.Sprintf("NEW WS CONN from %s", bigConn.Ip);
-	net.Logger.Log(network.INFO_LEVEL, log)
 
 	go readLoop(state, net, bigConn)
 	writeLoop(net, bigConn)
@@ -120,10 +118,15 @@ const (
 func readLoop(state *st.State, net *network.Networker, conn *network.WSConn) {
 
 	conn.Conn.SetReadLimit(1024 * 1024) // 1MB max message size
+	first_connected := time.Now();
 
 	// Reset deadline when we get pong from client
 	conn.Conn.SetReadDeadline(time.Now().Add(pongWait))
 	conn.Conn.SetPongHandler(func(string) error {
+		if conn.Nonce == "" && time.Since(first_connected) == 5 * time.Second {
+			conn.Conn.Close();
+			return errors.New("Unauthorized Web Socket Connection.")
+		}
 		conn.Conn.SetReadDeadline(time.Now().Add(pongWait))
 		return nil
 	})

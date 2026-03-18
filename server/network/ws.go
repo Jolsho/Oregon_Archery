@@ -34,8 +34,8 @@ func New_Upgrader(allowed_origins map[string]struct{}) *websocket.Upgrader {
 			origin = u.Scheme + "://" + u.Host
 		}
 
-		_, ok := allowed_origins[origin]
-		return ok
+		_, ok := allowed_origins[origin];
+		return ok;
 	};
 
 	return &websocket.Upgrader{

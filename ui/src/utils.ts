@@ -7,12 +7,12 @@ interface HasTime {
 }
 
 export function insertSorted<T extends HasTime>(arr: T[], item: T) {
-  const t = item.created_at.getTime();
+  const t = new Date(item.created_at).getTime();
   let lo = 0, hi = arr.length;
 
   while (lo < hi) {
     const mid = (lo + hi) >> 1;
-    const mt = arr[mid].created_at.getTime();
+    const mt = new Date(arr[mid].created_at).getTime();
 
     if (mt <= t) lo = mid + 1;
     else hi = mid;

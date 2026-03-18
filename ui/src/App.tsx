@@ -1,76 +1,16 @@
-import { delete_event, get_events, post_event, useWebSocket } from "./api.ts";
-import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
+import { delete_event, get_events, post_event} from "./api.ts";
+import { useEffect,  useState } from "react";
 import { Menu } from "./menu.tsx";
 import { calculate_leaders, new_event, type EventT } from "./eventT.ts";
 
 import { EventPage } from "./event.tsx";
-import { insertSorted } from "./utils.ts";
+import { load, Store } from "@tauri-apps/plugin-store";
+import { useEventSync, WS_URL } from "./ws.tsx";
 export type ConnectionStatus = {
     retryCount: number;
     status: string;
     is_manual: boolean;
 };
-
-export function useEventSync(
-    setEvents: Dispatch<SetStateAction<EventT[]>>,
-    setConnectionStatus: Dispatch<SetStateAction<ConnectionStatus>>,
-) {
-    return useWebSocket("/ws", {
-        onOpen: () => {
-            console.log("WebSocket connected");
-
-            setConnectionStatus((prev) => ({
-                ...prev,
-                status: "Syncing...",
-            }));
-        },
-
-        onMessage: (data) => {
-            switch (data.msg) {
-                case "new_event":
-                    setEvents((prev) => {
-                        const idx = prev.findIndex(
-                            (v) => v.title === data.payload.event.title,
-                        );
-                        if (idx >= 0) {
-                            if (prev[idx].is_own) return prev;
-
-                            const events = [...prev];
-                            events[idx] = data.payload.event;
-                            return events;
-                        }
-
-                        const events = [...prev];
-                        insertSorted(events, data.payload.event);
-                        return events;
-                    });
-                    break;
-
-                case "delete_event":
-                    setEvents((prev) => {
-                        const idx = prev.findIndex(
-                            (v) => v.title === data.payload.event.title,
-                        );
-
-                        if (idx < 0) return prev;
-                        if (prev[idx].is_own) return prev;
-
-                        const events = [...prev];
-                        events.splice(idx, 1);
-                        return events;
-                    });
-                    break;
-            }
-        },
-
-        onClose: (_) => {
-            setConnectionStatus((prev) => ({
-                ...prev,
-                status: "Reconnecting..."
-            }));
-        },
-    });
-}
 
 function App() {
 
@@ -79,16 +19,20 @@ function App() {
     const [menu_open, setMenuOpen] = useState<boolean>(true);
 
     const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
-        status: "Connected",
+        status: "Offline",
         retryCount: 0,
         is_manual: false,
     });
-    const {send} = useEventSync(setEvents, setConnectionStatus);
+
+    const [store, setStore] = useState<Store | null>(null);
+
+    const {send, connect, socket} = useEventSync(setEvents, setConnectionStatus);
 
 
     useEffect(() => {
-        if (connectionStatus.status == "Syncing...") {
+        if (connectionStatus.status == "Connected" && store) {
             setEvents(prev => {
+
                 const msg = "new_event";
                 let evs = [...prev];
                 evs.forEach(event => {
@@ -101,30 +45,50 @@ function App() {
                 });
                 return evs;
             })
-            setConnectionStatus({...connectionStatus, status: "Connected"});
         }
-    }, [connectionStatus])
-
+    }, [connectionStatus, store])
 
     useEffect(() => {
-        get_events().then((es) => {
-            es.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-            es.forEach(e => {
-                if (!(e.leaders instanceof Map)) {
-                    e.leaders = new Map(Object.entries(e.leaders ?? {}));
+        if (store) {
+            get_events(store).then((res) => {
+                res.events.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+                res.events.forEach(e => {
+                    if (!(e.leaders instanceof Map)) {
+                        e.leaders = new Map(Object.entries(e.leaders ?? {}));
+                    }
+                    calculate_leaders(e);
+                });
+                setEvents(res.events);
+                setCurrEvent(res.events.length - 1);
+
+                console.log("RECIEVED_COOKIE", res.token);
+                store.set("session_token", res.token);
+
+                if (!socket && store) {
+                    connect(store, WS_URL + `?token=${res.token}`);
                 }
-                calculate_leaders(e);
-            });
-            setEvents(es);
-            setCurrEvent(es.length - 1);
-        });
-    }, []);
+            }).catch(e => console.error("GET EVENTS",e));
+        }
+
+    }, [store]);
+
+    useEffect(() => {
+        if (!store) {
+            async function load_store() {
+                setStore(await load('store.json'));
+            }
+            load_store();
+            console.log("LOADED STORE");
+        }
+    }, [])
 
     async function submit_event(ev: EventT): Promise<string> {
         let msg = "";
         try {
-            await post_event(ev);
-            ev.is_persisted = true;
+            if (!!store) {
+                await post_event(store, ev);
+                ev.is_persisted = true;
+            }
         } catch (e) {
             if (e instanceof Error) msg = e.message;
             ev.is_persisted = false;
@@ -165,7 +129,8 @@ function App() {
                         setEvents(evs);
                         setCurrEvent(curr_idx - 1);
                         if (!!title) {
-                            delete_event(title).catch((e) => console.error(e));
+                            if (!store) return;
+                            delete_event(store, title).catch((e) => console.error(e));
                         }
                     }}
                 />

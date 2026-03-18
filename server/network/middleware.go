@@ -27,43 +27,44 @@ func Get_client_ip(r *http.Request) string {
 	return clientIP;
 }
 
-func Secure_Middleware(net *Networker, w http.ResponseWriter, r *http.Request) *http.Cookie {
+func Secure_Middleware(
+	net *Networker, 
+	w http.ResponseWriter, 
+	r *http.Request,
+) string {
+
+	origin := r.Header.Get("Origin")
+	if origin == "http://localhost:5174" || origin == "tauri://localhost" {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+	}
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
 	ip := Get_client_ip(r);
+	q := r.URL.Query();
+	token := q.Get("token");
 
-	cookie, err := r.Cookie(SESSION_COOKIE);
-	if err != nil {
-		if err != http.ErrNoCookie {
-			w.WriteHeader(http.StatusBadRequest)
-			return nil;
-		}
-
-		value, expire, err := generate_signed_cookie_value(net, w);
+	var err error;
+	if token == "" {
+		token, _, err = generate_signed_cookie_value(net, w);
 		if err != nil { 
 			log := fmt.Sprintf("GEN SIGNED COOKIE :: %s", err.Error());
 			net.Logger.Log(ERROR_LEVEL, log);
-			return nil;
+			return "";
 		}
-
-		cookie = &http.Cookie{
-			Name:     SESSION_COOKIE,
-			Value:    value,
-			Path:     "/",                 	// cookie is valid for all paths
-			HttpOnly: true,                	// inaccessible to JS (prevents XSS)
-			Secure:   true,               	// true in HTTPS
-			Expires:  expire, 			   	// expiration
-			SameSite: http.SameSiteLaxMode,
-		}
-
-		http.SetCookie(w, cookie);
+		
 	}
 
-	if err = verify_cookie(net, cookie, w); err != nil { 
+	if err = verify_token(net, &token, w); err != nil { 
 		log := fmt.Sprintf("INVALID COOKIE from %s :: %s", ip, err.Error());
 		net.Logger.Log(INFO_LEVEL, log);
 
-		return nil;
+		return "";
 	}
 
-	return cookie;
+	q.Set("token", token);
+	r.URL.RawQuery = q.Encode();
+
+	return token;
 }

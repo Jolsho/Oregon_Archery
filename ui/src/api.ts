@@ -1,67 +1,22 @@
+import type { Store } from "@tauri-apps/plugin-store";
 import type { EventT } from "./eventT";
-import { useCallback, useEffect, useRef } from "react";
 
-type WSHandlers = {
-    onOpen?: () => void;
-    onMessage?: (data: any) => void;
-    onClose?: (ev: CloseEvent) => void;
-};
-
-export function useWebSocket(url: string, handlers: WSHandlers) {
-    const wsRef = useRef<WebSocket | null>(null);
-    const retryRef = useRef(0);
-    const handlersRef = useRef(handlers);
-
-    // keep handlers updated without recreating socket
-    useEffect(() => {
-        handlersRef.current = handlers;
-    }, [handlers]);
-
-    const connect = useCallback(() => {
-        const ws = new WebSocket(url);
-        wsRef.current = ws;
-
-        ws.onopen = () => {
-            retryRef.current = 0;
-            handlersRef.current.onOpen?.();
-        };
-
-        ws.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                handlersRef.current.onMessage?.(data);
-            } catch {
-                handlersRef.current.onMessage?.(event.data);
-            }
-        };
-
-        ws.onclose = (ev) => {
-            handlersRef.current.onClose?.(ev);
-            retryRef.current++;
-            setTimeout(connect, 4000);
-        };
-    }, [url]);
-
-    useEffect(() => {
-        connect();
-        return () => wsRef.current?.close();
-    }, [connect]);
-
-    const send = useCallback((data: unknown) => {
-        const ws = wsRef.current;
-        if (!ws || ws.readyState !== WebSocket.OPEN) return;
-
-        ws.send(JSON.stringify(data));
-    }, []);
-
-    return { send, socket: wsRef.current };
+type GetRes = {
+    events: EventT[]
+    token: string
 }
 
-export async function get_events(): Promise<EventT[]> {
-    let res = await fetch("/events", {
-        method: "GET",
-        credentials: "include",
-    });
+export const ROOT_URL   = "http://127.0.0.1:8080";
+
+export async function get_events(cookie_store: Store): Promise<GetRes> {
+
+    let url = "/events";
+    const cookie = await cookie_store.get<string>("session_token");
+    if (!!cookie) {
+        url += `?token=${cookie}`
+    }
+
+    let res = await fetch(ROOT_URL + url, { method: "GET" });
     if (!res.ok) {
         console.error(res.text());
         throw res.text();
@@ -70,15 +25,18 @@ export async function get_events(): Promise<EventT[]> {
     }
 }
 
-export async function post_event(event: EventT): Promise<EventT> {
-    const url = `/events?title=${encodeURIComponent(event.title)}`;
+export async function post_event(cookie_store: Store, event: EventT): Promise<EventT> {
+    let url = `/events?title=${encodeURIComponent(event.title)}`;
+
+    const cookie = await cookie_store.get<string>("session_token");
+    if (!!cookie) {
+        url += `&token=${cookie}`
+    }
 
     try {
-        const res = await fetch(url, {
+        const res = await fetch(ROOT_URL + url, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
             body: JSON.stringify(event),
-            credentials: "include",
         });
 
         if (!res.ok) {
@@ -96,11 +54,16 @@ export async function post_event(event: EventT): Promise<EventT> {
     }
 }
 
-export async function delete_event(title: string) {
-    let res = await fetch(`/events?title=${title}`, {
-        method: "DELETE",
-        credentials: "include",
-    });
+export async function delete_event(cookie_store: Store, title: string) {
+
+    let url = ROOT_URL + `/events?title=${title}`;
+
+    const cookie = await cookie_store.get<string>("session_token");
+    if (!!cookie) {
+        url += `&token=${cookie}`
+    }
+
+    let res = await fetch(url, { method: "DELETE" });
     if (!res.ok) {
         const text = await res.text();
         throw new Error(`DELETE /events failed (${res.status}): ${text}`);

@@ -49,9 +49,11 @@ func main() {
 
 		LISTEN_IP = "127.0.0.1";
 		LISTEN_PORT = 8080;
-		DST = "../react/ohsal/dist";
+		DST = "../ui/dist";
 
 		allowedOrigins["http://localhost:8080"] = struct{}{};
+		allowedOrigins["tauri://localhost"] = struct{}{};
+		allowedOrigins["http://localhost:5174"] = struct{}{};
 	}
 
 	state := state.New_State();
@@ -70,9 +72,17 @@ func main() {
 		handlers.Handle_WS(net, state, w, r);
 	});
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if cookie := network.Secure_Middleware(net, w, r); cookie == nil { return }
+		if cookie := network.Secure_Middleware(net, w, r); cookie == "" {
+			return
+		}
+
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return ;
+		}
+
 		mux.ServeHTTP(w, r)
-	});
+	})
 
 	//////////////////////////////////////////////
 
