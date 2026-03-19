@@ -34,7 +34,6 @@ export type EventT = {
     is_persisted: boolean;
     divisions: Division[];
     teams: Team[];
-    leaders: Map<string, Participant[]>;
     kind: string;
     created_at: Date;
     expires: Date;
@@ -86,11 +85,9 @@ export function new_event(title="", teams=[], divisions=DIVISIONS, kind = "OUTDO
         is_persisted: false,
         divisions,
         teams,
-        leaders: new Map(),
         kind,
         created_at: new Date(),
         expires: new Date(),
     };
-    if (teams.length > 0) e.leaders = calculate_leaders(e);
     return e;
 }

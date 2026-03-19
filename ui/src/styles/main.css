@@ -1,6 +1,6 @@
 :root {
     --primary: rgba(250, 250, 250, 1);
-    --primary-dark: rgba(240, 240, 240, 1);
+    --primary-dark: #e1e1e1;
     --secondary: rgba(255, 255, 255, 1);
     --input-color: rgba(255, 255, 255, 1);
 }

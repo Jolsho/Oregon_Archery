@@ -28,6 +28,10 @@ function App() {
 
     const {send, connect, socket} = useEventSync(setEvents, setConnectionStatus);
 
+    useEffect(() => {
+        if (!!store) store.set("events", JSON.stringify(events));
+    }, [events])
+
 
     useEffect(() => {
         if (connectionStatus.status == "Connected" && store) {
@@ -51,15 +55,12 @@ function App() {
     useEffect(() => {
         if (store) {
             get_events(store).then((res) => {
-                res.events.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-                res.events.forEach(e => {
-                    if (!(e.leaders instanceof Map)) {
-                        e.leaders = new Map(Object.entries(e.leaders ?? {}));
-                    }
-                    calculate_leaders(e);
-                });
+                res.events.sort((a, b) => 
+                    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                );
+
                 setEvents(res.events);
-                setCurrEvent(res.events.length - 1);
+                setCurrEvent(curr_idx < 0 && res.events.length > 0 ? 0 : curr_idx);
 
                 console.log("RECIEVED_COOKIE", res.token);
                 store.set("session_token", res.token);
@@ -75,34 +76,21 @@ function App() {
     useEffect(() => {
         if (!store) {
             async function load_store() {
-                setStore(await load('store.json'));
+                let s = await load('store.json');
+                let raw_evs = await s.get<string>("events");
+                if (raw_evs) {
+                    const evs: EventT[] = JSON.parse(raw_evs);
+                    setEvents(evs)
+                    setCurrEvent(evs.length > 0 ? 0 : -1);
+                }
+
+                setStore(s);
             }
             load_store();
             console.log("LOADED STORE");
         }
     }, [])
 
-    function submit_event(ev: EventT) {
-        ev.is_persisted = false;
-        setEvents((prev) => {
-            let evs = [...prev];
-            evs[curr_idx] = ev;
-            return evs;
-        });
-
-        if (!!store) {
-            post_event(store, ev)
-            .then(() => {
-                ev.is_persisted = true;
-                setEvents((prev) => {
-                    let evs = [...prev];
-                    evs[curr_idx] = ev;
-                    return evs;
-                });
-            })
-            .catch((e) => console.error(e));
-        }
-    }
 
     return (
         <>
@@ -122,7 +110,27 @@ function App() {
                 <EventPage
                     events={events}
                     idx={curr_idx}
-                    post_event={submit_event}
+                    post_event={(ev) => {
+                        ev.is_persisted = false;
+                        setEvents((prev) => {
+                            let evs = [...prev];
+                            evs[curr_idx] = ev;
+                            return evs;
+                        });
+
+                        if (!!store) {
+                            post_event(store, ev)
+                            .then(() => {
+                                ev.is_persisted = true;
+                                setEvents((prev) => {
+                                    let evs = [...prev];
+                                    evs[curr_idx] = ev;
+                                    return evs;
+                                });
+                            })
+                            .catch((e) => console.error(e));
+                        }
+                    }}
                     remove_event={() => {
                         let evs = [...events];
                         const title = evs[curr_idx].title;

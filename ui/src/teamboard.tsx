@@ -239,11 +239,11 @@ export function TeamBoard({ isown, divisions, team, submit_team, remove_team}: T
                             onClick={() => setMut(true) }
                         />
                         ) : (
-                        <img/>
+                        <div/>
                         ) 
                     }
                         <h2 className="roboto-mono-norm">{name}</h2>
-                        <img/>
+                        <div/>
                     </>
                 )}
             </div>
